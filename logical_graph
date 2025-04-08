@@ -1,0 +1,47 @@
+// Logical Graph of Appointments and Institutions
+digraph {
+	P1 [label="Philippe Jamet"]
+	P2 [label="Pascal Ray"]
+	P3 [label="David Delafosse"]
+	P4 [label="Jacques Fayolle"]
+	MSE [label="Mines Saint-Étienne"]
+	IMT [label="Institut Mines-Télécom"]
+	D1 [label="2008-09-01"]
+	D2 [label="2014-07-14"]
+	D3 [label="2014-07-15"]
+	D4 [label="2019-09-02"]
+	D5 [label="2021-11-30"]
+	D6 [label="2021-12-01"]
+	D7 [label="2022-04-30"]
+	D8 [label="2022-05-01"]
+	A1 [label="Appointment 1
+(Director)"]
+	A2 [label="Appointment 2
+(Director)"]
+	A3 [label="Appointment 3
+(Director)"]
+	A4 [label="Appointment 4
+(Director)"]
+	A5 [label="Appointment 5
+(Director)"]
+	A1 -> P1 [label=person]
+	A1 -> MSE [label=institution]
+	A1 -> D1 [label=startDate]
+	A1 -> D2 [label=endDate]
+	A2 -> P1 [label=person]
+	A2 -> IMT [label=institution]
+	A2 -> D3 [label=startDate]
+	A2 -> D4 [label=endDate]
+	A3 -> P2 [label=person]
+	A3 -> MSE [label=institution]
+	A3 -> D3 [label=startDate]
+	A3 -> D5 [label=endDate]
+	A4 -> P3 [label=person]
+	A4 -> MSE [label=institution]
+	A4 -> D6 [label=startDate]
+	A4 -> D7 [label=endDate]
+	A5 -> P4 [label=person]
+	A5 -> MSE [label=institution]
+	A5 -> D8 [label=startDate]
+	MSE -> IMT [label=isPartOf]
+}
