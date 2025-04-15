@@ -46,15 +46,58 @@ pip install -e .
 
 After installation, you can use the `imgproc` command-line tool:
 
+### Intensity Transformations
+
 ```bash
 # Apply gamma correction to an image
 imgproc intensity --method gamma --gamma 0.5 --image path/to/image.jpg
 
+# Apply contrast stretching
+imgproc intensity --method contrast --E 4.0 --image path/to/image.jpg
+
+# Apply both transformations
+imgproc intensity --method both --gamma 0.5 --E 4.0 --image path/to/image.jpg
+```
+
+### Histogram Processing
+
+```bash
 # Apply histogram equalization
 imgproc histogram --method custom --bins 256 --image path/to/image.jpg
 
 # Apply histogram matching
 imgproc matching --method custom --peak1 0.3 --peak2 0.7 --image path/to/image.jpg
+```
+
+### Damage Modeling and Image Restoration
+
+```bash
+# Generate a checkerboard image
+imgproc checkerboard --size 8 --square_size 32 --output checkerboard.png
+
+# Apply damage to an image using a Gaussian PSF
+imgproc damage --psf gaussian --sigma 3.0 --noise 0.01 --image path/to/image.jpg --output damaged.png
+
+# Apply damage using a motion blur PSF
+imgproc damage --psf motion --length 15 --angle 45 --noise 0.01 --image path/to/image.jpg
+
+# Restore an image using the inverse filter
+imgproc restore --method inverse --psf gaussian --sigma 3.0 --image damaged.png --output restored.png
+
+# Restore an image using the Wiener filter
+imgproc restore --method wiener --k 0.01 --psf gaussian --sigma 3.0 --image damaged.png
+
+# Compare different restoration methods
+imgproc restore --method compare --psf gaussian --sigma 3.0 --image damaged.png
+```
+
+You can also use positional arguments for image paths:
+
+```bash
+# Using positional arguments for image paths
+imgproc intensity --method gamma --gamma 0.5 path/to/image.jpg
+imgproc damage --psf gaussian --sigma 3.0 path/to/image.jpg
+imgproc restore --method wiener --k 0.01 damaged.png
 ```
 
 You can also run the project using the main.py script without installation:
@@ -63,11 +106,11 @@ You can also run the project using the main.py script without installation:
 # Apply intensity transformations
 python main.py intensity --method gamma --gamma 0.5 --image path/to/image.jpg
 
-# Apply histogram equalization
-python main.py histogram --method custom --bins 256 --image path/to/image.jpg
+# Apply damage to an image
+python main.py damage --psf gaussian --sigma 3.0 --noise 0.01 --image path/to/image.jpg
 
-# Apply histogram matching
-python main.py matching --method custom --peak1 0.3 --peak2 0.7 --image path/to/image.jpg
+# Restore an image
+python main.py restore --method wiener --k 0.01 --psf gaussian --sigma 3.0 --image damaged.png
 ```
 
 ## Examples

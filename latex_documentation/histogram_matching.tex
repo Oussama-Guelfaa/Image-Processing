@@ -1,0 +1,103 @@
+Histogram matching (also known as histogram specification) is the transformation of an image so that its histogram matches a specified histogram. This is useful when you want to make the appearance of two images similar or when you want to enhance an image by specifying a histogram with the desired characteristics.
+
+\\subsection{Theory}
+
+The histogram matching method involves the following steps:
+\\begin{enumerate}
+\\item Compute the histogram and CDF of the input image.
+\\item Compute the histogram and CDF of the reference histogram.
+\\item For each intensity level in the input image, find the intensity level in the reference histogram that has the closest CDF value.
+\\item Replace the intensity level in the input image with the corresponding intensity level from the reference histogram.
+\\end{enumerate}
+
+\\subsection{Implementation}
+
+We have implemented histogram matching in the \\texttt{histogram\\_matching.py} module:
+
+\\begin{verbatim}
+def match_histogram_custom(image, reference_hist, bins=256):
+    """
+    Match the histogram of an image to a reference histogram.
+    
+    Args:
+        image (ndarray): Input image (values between 0 and 1)
+        reference_hist (ndarray): Reference histogram
+        bins (int): Number of bins for the histogram (default: 256)
+        
+    Returns:
+        ndarray: Image with matched histogram
+    """
+    # Compute the histogram of the input image
+    hist, bin_edges = np.histogram(image.flatten(), bins=bins, range=(0, 1))
+    
+    # Compute the CDFs
+    cdf_image = hist.cumsum() / hist.sum()
+    cdf_reference = reference_hist.cumsum() / reference_hist.sum()
+    
+    # Create a lookup table for the mapping
+    lookup_table = np.zeros(bins)
+    for i in range(bins):
+        # Find the intensity level in the reference histogram with the closest CDF
+        lookup_table[i] = np.argmin(np.abs(cdf_reference - cdf_image[i]))
+    
+    # Normalize the lookup table to [0, 1]
+    lookup_table = lookup_table / (bins - 1)
+    
+    # Apply the lookup table to the image
+    bin_idx = np.digitize(image.flatten(), bin_edges[:-1])
+    matched = lookup_table[bin_idx - 1]
+    
+    # Reshape back to the original image shape
+    matched = matched.reshape(image.shape)
+    
+    return matched
+\\end{verbatim}
+
+We also provide a function to create a bimodal histogram as a reference:
+
+\\begin{verbatim}
+def create_bimodal_histogram(bins=256, peak1=0.25, peak2=0.75, 
+                            sigma1=0.05, sigma2=0.05, 
+                            weight1=0.5, weight2=0.5):
+    """
+    Create a bimodal histogram with two Gaussian peaks.
+    
+    Args:
+        bins (int): Number of bins for the histogram (default: 256)
+        peak1 (float): Position of the first peak (default: 0.25)
+        peak2 (float): Position of the second peak (default: 0.75)
+        sigma1 (float): Standard deviation of the first peak (default: 0.05)
+        sigma2 (float): Standard deviation of the second peak (default: 0.05)
+        weight1 (float): Weight of the first peak (default: 0.5)
+        weight2 (float): Weight of the second peak (default: 0.5)
+        
+    Returns:
+        tuple: (histogram, bin_centers)
+    """
+    # Create bin centers
+    bin_centers = np.linspace(0, 1, bins)
+    
+    # Create the bimodal histogram
+    hist = weight1 * np.exp(-((bin_centers - peak1) ** 2) / (2 * sigma1 ** 2))
+    hist += weight2 * np.exp(-((bin_centers - peak2) ** 2) / (2 * sigma2 ** 2))
+    
+    # Normalize the histogram
+    hist = hist / hist.sum()
+    
+    return hist, bin_centers
+\\end{verbatim}
+
+\\subsection{Command-Line Interface}
+
+The histogram matching functionality is available through the command-line interface:
+
+\\begin{verbatim}
+# Apply histogram matching using the custom implementation
+imgproc matching --method custom --peak1 0.3 --peak2 0.7 --image path/to/image.jpg
+
+# Apply histogram matching using the built-in function
+imgproc matching --method builtin --peak1 0.3 --peak2 0.7 --image path/to/image.jpg
+
+# Apply both methods and compare
+imgproc matching --method both --peak1 0.3 --peak2 0.7 --image path/to/image.jpg
+\\end{verbatim}

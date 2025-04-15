@@ -79,6 +79,36 @@ def main():
     matching_parser.add_argument('--weight2', type=float, default=0.4, help='Weight of the second peak')
     matching_parser.add_argument('--output', type=str, default=None, help='Path to save the matched image')
 
+    # Damage modeling parser
+    damage_parser = subparsers.add_parser('damage', help='Apply damage to an image using convolution and noise')
+    damage_parser.add_argument('--image', type=str, default=None, help='Path to the image file (default: jupiter.jpg)')
+    damage_parser.add_argument('--psf', choices=['gaussian', 'motion'], default='gaussian',
+                             help='Type of Point Spread Function to use')
+    damage_parser.add_argument('--sigma', type=float, default=3.0, help='Sigma parameter for Gaussian PSF')
+    damage_parser.add_argument('--length', type=int, default=15, help='Length parameter for motion blur PSF')
+    damage_parser.add_argument('--angle', type=float, default=45.0, help='Angle parameter for motion blur PSF (in degrees)')
+    damage_parser.add_argument('--noise', type=float, default=0.01, help='Noise level for the damage')
+    damage_parser.add_argument('--output', type=str, default=None, help='Path to save the damaged image')
+
+    # Restoration parser
+    restore_parser = subparsers.add_parser('restore', help='Restore a damaged image using deconvolution')
+    restore_parser.add_argument('--image', type=str, default=None, help='Path to the damaged image file (default: jupiter.jpg)')
+    restore_parser.add_argument('--psf', choices=['gaussian', 'motion'], default='gaussian',
+                              help='Type of Point Spread Function used for the damage')
+    restore_parser.add_argument('--sigma', type=float, default=3.0, help='Sigma parameter for Gaussian PSF')
+    restore_parser.add_argument('--length', type=int, default=15, help='Length parameter for motion blur PSF')
+    restore_parser.add_argument('--angle', type=float, default=45.0, help='Angle parameter for motion blur PSF (in degrees)')
+    restore_parser.add_argument('--method', choices=['inverse', 'wiener', 'compare'], default='wiener',
+                              help='Restoration method to use')
+    restore_parser.add_argument('--k', type=float, default=0.01, help='K parameter for Wiener filter')
+    restore_parser.add_argument('--output', type=str, default=None, help='Path to save the restored image')
+
+    # Checkerboard parser
+    checkerboard_parser = subparsers.add_parser('checkerboard', help='Generate a checkerboard image')
+    checkerboard_parser.add_argument('--size', type=int, default=8, help='Number of squares in each dimension')
+    checkerboard_parser.add_argument('--square_size', type=int, default=32, help='Size of each square in pixels')
+    checkerboard_parser.add_argument('--output', type=str, default=None, help='Path to save the checkerboard image')
+
     # Parse arguments
     args = parser.parse_args()
 
@@ -362,6 +392,204 @@ def main():
             # Apply both methods and compare
             print("Application de l'appariement d'histogramme avec les deux méthodes...")
             equalized, matched_custom, matched_builtin = histogram_matching.visualize_matching_results(image, reference_hist, bins=args.bins)
+
+    elif args.command == 'damage':
+        image_info = f" on {args.image}" if args.image else ""
+        output_info = f" and saving to {args.output}" if args.output else ""
+        psf_info = f" using {args.psf} PSF"
+        noise_info = f" with noise level {args.noise}"
+
+        print(f"Applying damage to image{image_info}{psf_info}{noise_info}{output_info}")
+
+        # Import here to avoid circular imports
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+        # Import the damage modeling module
+        from src.image_processing import damage_modeling
+
+        # Load the image
+        image = damage_modeling.load_image() if args.image is None else \
+                damage_modeling.img_as_float(damage_modeling.io.imread(args.image, as_gray=True))
+
+        # Generate the PSF
+        if args.psf == 'gaussian':
+            psf = damage_modeling.generate_gaussian_psf(size=64, sigma=args.sigma)
+            psf_title = f"Gaussian PSF (sigma={args.sigma})"
+        else:  # motion
+            psf = damage_modeling.generate_motion_blur_psf(size=64, length=args.length, angle=args.angle)
+            psf_title = f"Motion Blur PSF (length={args.length}, angle={args.angle})"
+
+        # Visualize the PSF
+        damage_modeling.visualize_psf(psf, title=psf_title)
+
+        # Apply damage to the image
+        damaged = damage_modeling.apply_damage(image, psf, noise_level=args.noise)
+
+        # Visualize the original and damaged images
+        fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+        axes[0].imshow(image, cmap='gray')
+        axes[0].set_title('Original Image')
+        axes[0].axis('off')
+        axes[1].imshow(damaged, cmap='gray')
+        axes[1].set_title('Damaged Image')
+        axes[1].axis('off')
+        plt.tight_layout()
+        plt.show()
+
+        # Save the output if requested
+        if args.output:
+            result_uint8 = damage_modeling.img_as_ubyte(damaged)
+            damage_modeling.io.imsave(args.output, result_uint8)
+            print(f"Damaged image saved to: {args.output}")
+
+    elif args.command == 'restore':
+        image_info = f" on {args.image}" if args.image else ""
+        output_info = f" and saving to {args.output}" if args.output else ""
+        psf_info = f" using {args.psf} PSF"
+        method_info = f" with {args.method} method"
+
+        print(f"Restoring image{image_info}{psf_info}{method_info}{output_info}")
+
+        # Import here to avoid circular imports
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+        # Import the damage modeling module
+        from src.image_processing import damage_modeling
+
+        # Load the image
+        damaged_image = damage_modeling.load_image() if args.image is None else \
+                       damage_modeling.img_as_float(damage_modeling.io.imread(args.image, as_gray=True))
+
+        # Generate the PSF
+        if args.psf == 'gaussian':
+            psf = damage_modeling.generate_gaussian_psf(size=64, sigma=args.sigma)
+            psf_title = f"Gaussian PSF (sigma={args.sigma})"
+        else:  # motion
+            psf = damage_modeling.generate_motion_blur_psf(size=64, length=args.length, angle=args.angle)
+            psf_title = f"Motion Blur PSF (length={args.length}, angle={args.angle})"
+
+        # Visualize the PSF
+        damage_modeling.visualize_psf(psf, title=psf_title)
+
+        if args.method == 'compare':
+            # Compare different restoration methods
+            print("Comparing different restoration methods...")
+
+            # Apply different restoration methods
+            restored_inverse = damage_modeling.inverse_filter(damaged_image, psf, epsilon=1e-3)
+            restored_wiener_low = damage_modeling.wiener_filter(damaged_image, psf, K=0.001)
+            restored_wiener_med = damage_modeling.wiener_filter(damaged_image, psf, K=0.01)
+            restored_wiener_high = damage_modeling.wiener_filter(damaged_image, psf, K=0.1)
+
+            # Visualize the results
+            fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+
+            axes[0, 0].imshow(damaged_image, cmap='gray')
+            axes[0, 0].set_title('Damaged Image')
+            axes[0, 0].axis('off')
+
+            axes[0, 1].imshow(restored_inverse, cmap='gray')
+            axes[0, 1].set_title('Inverse Filter')
+            axes[0, 1].axis('off')
+
+            axes[0, 2].imshow(restored_wiener_low, cmap='gray')
+            axes[0, 2].set_title('Wiener Filter (K=0.001)')
+            axes[0, 2].axis('off')
+
+            axes[1, 0].imshow(restored_wiener_med, cmap='gray')
+            axes[1, 0].set_title('Wiener Filter (K=0.01)')
+            axes[1, 0].axis('off')
+
+            axes[1, 1].imshow(restored_wiener_high, cmap='gray')
+            axes[1, 1].set_title('Wiener Filter (K=0.1)')
+            axes[1, 1].axis('off')
+
+            plt.tight_layout()
+            plt.show()
+
+            # Save the output if requested
+            if args.output:
+                # Save the medium Wiener filter result
+                result_uint8 = damage_modeling.img_as_ubyte(restored_wiener_med)
+                damage_modeling.io.imsave(args.output, result_uint8)
+                print(f"Restored image (Wiener K=0.01) saved to: {args.output}")
+
+                # Save other results with suffixes
+                base_name, ext = os.path.splitext(args.output)
+                damage_modeling.io.imsave(f"{base_name}_inverse{ext}", damage_modeling.img_as_ubyte(restored_inverse))
+                damage_modeling.io.imsave(f"{base_name}_wiener_low{ext}", damage_modeling.img_as_ubyte(restored_wiener_low))
+                damage_modeling.io.imsave(f"{base_name}_wiener_high{ext}", damage_modeling.img_as_ubyte(restored_wiener_high))
+                print(f"All restoration results saved with different suffixes.")
+
+        elif args.method == 'inverse':
+            # Apply inverse filter
+            print("Applying inverse filter...")
+            restored = damage_modeling.inverse_filter(damaged_image, psf, epsilon=1e-3)
+
+            # Visualize the result
+            fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+            axes[0].imshow(damaged_image, cmap='gray')
+            axes[0].set_title('Damaged Image')
+            axes[0].axis('off')
+            axes[1].imshow(restored, cmap='gray')
+            axes[1].set_title('Restored Image (Inverse Filter)')
+            axes[1].axis('off')
+            plt.tight_layout()
+            plt.show()
+
+            # Save the output if requested
+            if args.output:
+                result_uint8 = damage_modeling.img_as_ubyte(restored)
+                damage_modeling.io.imsave(args.output, result_uint8)
+                print(f"Restored image saved to: {args.output}")
+
+        else:  # wiener
+            # Apply Wiener filter
+            print(f"Applying Wiener filter with K={args.k}...")
+            restored = damage_modeling.wiener_filter(damaged_image, psf, K=args.k)
+
+            # Visualize the result
+            fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+            axes[0].imshow(damaged_image, cmap='gray')
+            axes[0].set_title('Damaged Image')
+            axes[0].axis('off')
+            axes[1].imshow(restored, cmap='gray')
+            axes[1].set_title(f'Restored Image (Wiener Filter, K={args.k})')
+            axes[1].axis('off')
+            plt.tight_layout()
+            plt.show()
+
+            # Save the output if requested
+            if args.output:
+                result_uint8 = damage_modeling.img_as_ubyte(restored)
+                damage_modeling.io.imsave(args.output, result_uint8)
+                print(f"Restored image saved to: {args.output}")
+
+    elif args.command == 'checkerboard':
+        print(f"Generating checkerboard image with {args.size}x{args.size} squares of size {args.square_size}px")
+
+        # Import here to avoid circular imports
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+        # Import the damage modeling module
+        from src.image_processing import damage_modeling
+
+        # Generate the checkerboard
+        checkerboard = damage_modeling.generate_checkerboard(size=args.size, square_size=args.square_size)
+
+        # Visualize the checkerboard
+        plt.figure(figsize=(5, 5))
+        plt.imshow(checkerboard, cmap='gray')
+        plt.title('Checkerboard Image')
+        plt.axis('off')
+        plt.tight_layout()
+        plt.show()
+
+        # Save the output if requested
+        if args.output:
+            result_uint8 = damage_modeling.img_as_ubyte(checkerboard)
+            damage_modeling.io.imsave(args.output, result_uint8)
+            print(f"Checkerboard image saved to: {args.output}")
 
     else:
         parser.print_help()

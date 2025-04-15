@@ -1,0 +1,308 @@
+\\section{Damage modeling}
+
+A damage process can be modeled by both a damage function $D$ and an additive noise $n$, acting on an input image $f$ for producing the damaged image $g$:
+
+\\begin{equation}
+g = D(f) + n
+\\end{equation}
+
+Knowing $g$, the objective of restoration is to get an estimate $\\hat{f}$ (the restored image) of the original image $f$. If $D$ is a linear process, spatially invariant, then the equation can be simplified as:
+
+\\begin{equation}
+g = h * f + n
+\\end{equation}
+
+where $h$ is the spatial representation of the damage function (called the Point Spread Function - PSF), and $*$ denotes the convolution operation. In general, the more knowledge you have about the function $H$ and the noise $n$, the closer $\\hat{f}$ to $f$.
+
+The equivalent formulation in the frequency domain is:
+
+\\begin{equation}
+G = H\\cdot F + N
+\\end{equation}
+
+where the letters in uppercase are the Fourier transforms of the corresponding terms in the eq. 6.2.
+
+\\subsection{Implementation}
+
+We have implemented several functions to model damage and restore images:
+
+\\begin{itemize}
+\\item Generate the 'checkerboard' image.
+\\item Generate a PSF corresponding to a blur (motion or isotropic).
+\\item Create a damaged image (a circular option is used, because the FFT implies that functions are periodical) and add a Gaussian noise.
+\\item Visualize the different images.
+\\end{itemize}
+
+The following function generates in python a checkerboard:
+
+\\begin{verbatim}
+def generate_checkerboard(size=8, square_size=32):
+    """
+    Generate a checkerboard image.
+    
+    Args:
+        size (int): Number of squares in each dimension (default: 8)
+        square_size (int): Size of each square in pixels (default: 32)
+        
+    Returns:
+        ndarray: Checkerboard image with values 0 and 1
+    """
+    # Create a grid of coordinates
+    x = np.arange(size * square_size)
+    y = np.arange(size * square_size)
+    X, Y = np.meshgrid(x, y)
+    
+    # Create the checkerboard pattern
+    checkerboard = np.zeros((size * square_size, size * square_size))
+    for i in range(size):
+        for j in range(size):
+            if (i + j) % 2 == 0:
+                checkerboard[i*square_size:(i+1)*square_size, 
+                             j*square_size:(j+1)*square_size] = 1
+    
+    return checkerboard
+\\end{verbatim}
+
+\\subsection{Point Spread Functions}
+
+We have implemented two types of PSFs:
+
+\\subsubsection{Gaussian PSF}
+
+A Gaussian PSF represents an isotropic blur, which is common in many imaging systems:
+
+\\begin{verbatim}
+def generate_gaussian_psf(size=64, sigma=3):
+    """
+    Generate a Gaussian Point Spread Function (PSF).
+    
+    Args:
+        size (int): Size of the PSF in pixels (default: 64)
+        sigma (float): Standard deviation of the Gaussian (default: 3)
+        
+    Returns:
+        ndarray: Normalized Gaussian PSF
+    """
+    # Create a grid of coordinates
+    x = np.arange(size) - size // 2
+    y = np.arange(size) - size // 2
+    X, Y = np.meshgrid(x, y)
+    
+    # Create the Gaussian PSF
+    psf = np.exp(-(X**2 + Y**2) / (2 * sigma**2))
+    
+    # Normalize the PSF so it sums to 1
+    psf = psf / np.sum(psf)
+    
+    return psf
+\\end{verbatim}
+
+\\subsubsection{Motion Blur PSF}
+
+A motion blur PSF represents the blur caused by camera or object motion during exposure:
+
+\\begin{verbatim}
+def generate_motion_blur_psf(size=64, length=15, angle=45):
+    """
+    Generate a motion blur Point Spread Function (PSF).
+    
+    Args:
+        size (int): Size of the PSF in pixels (default: 64)
+        length (int): Length of the motion blur in pixels (default: 15)
+        angle (float): Angle of the motion blur in degrees (default: 45)
+        
+    Returns:
+        ndarray: Normalized motion blur PSF
+    """
+    # Create a grid of coordinates
+    x = np.arange(size) - size // 2
+    y = np.arange(size) - size // 2
+    X, Y = np.meshgrid(x, y)
+    
+    # Convert angle to radians
+    angle_rad = np.deg2rad(angle)
+    
+    # Create a line with the specified angle
+    Z = np.zeros((size, size))
+    for i in range(-length // 2, length // 2 + 1):
+        x_pos = int(i * np.cos(angle_rad)) + size // 2
+        y_pos = int(i * np.sin(angle_rad)) + size // 2
+        if 0 <= x_pos < size and 0 <= y_pos < size:
+            Z[y_pos, x_pos] = 1
+    
+    # Apply a small Gaussian blur to make it more realistic
+    Z = signal.convolve2d(Z, generate_gaussian_psf(size=5, sigma=1), 
+                          mode='same')
+    
+    # Normalize the PSF so it sums to 1
+    Z = Z / np.sum(Z)
+    
+    return Z
+\\end{verbatim}
+
+\\subsection{Applying Damage}
+
+We can apply damage to an image using convolution with a PSF and additive noise:
+
+\\begin{verbatim}
+def apply_damage(image, psf, noise_level=0.01):
+    """
+    Apply damage to an image using convolution with a PSF and additive noise.
+    
+    The damage model is: g = h * f + n
+    where:
+    - g is the damaged image
+    - h is the PSF
+    - f is the original image
+    - n is the noise
+    - * denotes convolution
+    """
+    # Ensure the image is in float format with values between 0 and 1
+    if image.min() < 0 or image.max() > 1:
+        print("Warning: Image should have values between 0 and 1. Normalizing...")
+        image = (image - image.min()) / (image.max() - image.min())
+    
+    # Apply convolution in the spatial domain
+    blurred = signal.convolve2d(image, psf, mode='same', boundary='wrap')
+    
+    # Add Gaussian noise
+    noise = np.random.normal(0, noise_level, blurred.shape)
+    damaged = blurred + noise
+    
+    # Clip values to [0, 1] range
+    damaged = np.clip(damaged, 0, 1)
+    
+    return damaged
+\\end{verbatim}
+
+\\subsection{Image Restoration}
+
+We have implemented two restoration methods:
+
+\\subsubsection{Inverse Filter}
+
+The inverse filter is the simplest restoration method, but it is sensitive to noise:
+
+\\begin{verbatim}
+def inverse_filter(damaged_image, psf, epsilon=1e-3):
+    """
+    Restore an image using the inverse filter method.
+    
+    The inverse filter in the frequency domain is: F = G / H
+    where:
+    - F is the Fourier transform of the restored image
+    - G is the Fourier transform of the damaged image
+    - H is the Fourier transform of the PSF
+    
+    A small epsilon is added to avoid division by zero.
+    """
+    # Pad the PSF to match the image size
+    psf_padded = np.zeros_like(damaged_image)
+    psf_center = psf.shape[0] // 2
+    psf_start_x = damaged_image.shape[0] // 2 - psf_center
+    psf_start_y = damaged_image.shape[1] // 2 - psf_center
+    psf_padded[psf_start_x:psf_start_x+psf.shape[0], 
+               psf_start_y:psf_start_y+psf.shape[1]] = psf
+    
+    # Apply inverse filter in the frequency domain
+    G = np.fft.fft2(damaged_image)
+    H = np.fft.fft2(psf_padded)
+    F = G / (H + epsilon)
+    
+    # Convert back to spatial domain
+    restored = np.real(np.fft.ifft2(F))
+    
+    # Clip values to [0, 1] range
+    restored = np.clip(restored, 0, 1)
+    
+    return restored
+\\end{verbatim}
+
+\\subsubsection{Wiener Filter}
+
+The Wiener filter is more robust to noise than the inverse filter:
+
+\\begin{verbatim}
+def wiener_filter(damaged_image, psf, K=0.01):
+    """
+    Restore an image using the Wiener filter method.
+    
+    The Wiener filter in the frequency domain is: F = G · H* / (|H|² + K)
+    where:
+    - F is the Fourier transform of the restored image
+    - G is the Fourier transform of the damaged image
+    - H is the Fourier transform of the PSF
+    - H* is the complex conjugate of H
+    - |H|² is the squared magnitude of H
+    - K is a parameter related to the noise-to-signal ratio
+    """
+    # Pad the PSF to match the image size
+    psf_padded = np.zeros_like(damaged_image)
+    psf_center = psf.shape[0] // 2
+    psf_start_x = damaged_image.shape[0] // 2 - psf_center
+    psf_start_y = damaged_image.shape[1] // 2 - psf_center
+    psf_padded[psf_start_x:psf_start_x+psf.shape[0], 
+               psf_start_y:psf_start_y+psf.shape[1]] = psf
+    
+    # Apply Wiener filter in the frequency domain
+    G = np.fft.fft2(damaged_image)
+    H = np.fft.fft2(psf_padded)
+    H_conj = np.conj(H)
+    H_abs_squared = np.abs(H) ** 2
+    F = G * H_conj / (H_abs_squared + K)
+    
+    # Convert back to spatial domain
+    restored = np.real(np.fft.ifft2(F))
+    
+    # Clip values to [0, 1] range
+    restored = np.clip(restored, 0, 1)
+    
+    return restored
+\\end{verbatim}
+
+\\subsection{Example Usage}
+
+Here's how to use these functions to damage and restore an image:
+
+\\begin{verbatim}
+# Load an image
+image = load_image('jupiter.jpg')
+
+# Generate a PSF
+psf = generate_gaussian_psf(size=64, sigma=3)
+
+# Apply damage to the image
+damaged = apply_damage(image, psf, noise_level=0.01)
+
+# Restore the image using the Wiener filter
+restored = wiener_filter(damaged, psf, K=0.01)
+
+# Visualize the results
+visualize_restoration_results(image, damaged, restored)
+\\end{verbatim}
+
+\\subsection{Command-Line Interface}
+
+The damage modeling and restoration functionality is also available through the command-line interface:
+
+\\begin{verbatim}
+# Generate a checkerboard image
+imgproc checkerboard --size 8 --square_size 32 --output checkerboard.png
+
+# Apply damage to an image
+imgproc damage --psf gaussian --sigma 3.0 --noise 0.01 --image jupiter.jpg
+
+# Restore an image
+imgproc restore --method wiener --k 0.01 --psf gaussian --sigma 3.0 --image damaged.png
+\\end{verbatim}
+
+\\subsection{Conclusion}
+
+Image restoration is a complex problem that requires knowledge of the damage process. The Wiener filter generally provides better results than the inverse filter, especially in the presence of noise. However, the quality of the restoration depends on the accuracy of the PSF and the noise model.
+
+\\begin{figure}[h]
+\\centering
+\\includegraphics[width=0.8\\textwidth]{figures/restoration_example.png}
+\\caption{Example of image restoration. Left: Original image. Middle: Damaged image with Gaussian blur and noise. Right: Restored image using the Wiener filter.}
+\\label{fig:restoration_example}
+\\end{figure}

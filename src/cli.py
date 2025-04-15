@@ -54,6 +54,55 @@ Examples:
     intensity_parser.add_argument('image_path', type=str, nargs='?', default=None,
                         help='Path to the input image (positional argument)')
 
+    # Damage modeling command
+    damage_parser = subparsers.add_parser('damage', help='Apply damage to an image using convolution and noise')
+    damage_parser.add_argument('--psf', choices=['gaussian', 'motion'], default='gaussian',
+                        help='Type of Point Spread Function to use')
+    damage_parser.add_argument('--sigma', type=float, default=3.0,
+                        help='Sigma parameter for Gaussian PSF')
+    damage_parser.add_argument('--length', type=int, default=15,
+                        help='Length parameter for motion blur PSF')
+    damage_parser.add_argument('--angle', type=float, default=45.0,
+                        help='Angle parameter for motion blur PSF (in degrees)')
+    damage_parser.add_argument('--noise', type=float, default=0.01,
+                        help='Noise level for the damage')
+    damage_parser.add_argument('--image', type=str, default=None,
+                        help='Path to the input image (default: use sample image)')
+    damage_parser.add_argument('--output', type=str, default=None,
+                        help='Path to save the damaged image')
+    damage_parser.add_argument('image_path', type=str, nargs='?', default=None,
+                        help='Path to the input image (positional argument)')
+
+    # Restoration command
+    restore_parser = subparsers.add_parser('restore', help='Restore a damaged image using deconvolution')
+    restore_parser.add_argument('--method', choices=['inverse', 'wiener', 'compare'], default='wiener',
+                        help='Restoration method to use')
+    restore_parser.add_argument('--psf', choices=['gaussian', 'motion'], default='gaussian',
+                        help='Type of Point Spread Function used for the damage')
+    restore_parser.add_argument('--sigma', type=float, default=3.0,
+                        help='Sigma parameter for Gaussian PSF')
+    restore_parser.add_argument('--length', type=int, default=15,
+                        help='Length parameter for motion blur PSF')
+    restore_parser.add_argument('--angle', type=float, default=45.0,
+                        help='Angle parameter for motion blur PSF (in degrees)')
+    restore_parser.add_argument('--k', type=float, default=0.01,
+                        help='K parameter for Wiener filter')
+    restore_parser.add_argument('--image', type=str, default=None,
+                        help='Path to the damaged image file (default: use sample image)')
+    restore_parser.add_argument('--output', type=str, default=None,
+                        help='Path to save the restored image')
+    restore_parser.add_argument('image_path', type=str, nargs='?', default=None,
+                        help='Path to the input image (positional argument)')
+
+    # Checkerboard command
+    checkerboard_parser = subparsers.add_parser('checkerboard', help='Generate a checkerboard image')
+    checkerboard_parser.add_argument('--size', type=int, default=8,
+                        help='Number of squares in each dimension')
+    checkerboard_parser.add_argument('--square_size', type=int, default=32,
+                        help='Size of each square in pixels')
+    checkerboard_parser.add_argument('--output', type=str, default=None,
+                        help='Path to save the checkerboard image')
+
     # Histogram equalization command
     histogram_parser = subparsers.add_parser('histogram', help='Apply histogram equalization')
     histogram_parser.add_argument('--method', choices=['builtin', 'custom', 'both'], default='both',

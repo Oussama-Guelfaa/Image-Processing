@@ -1,0 +1,87 @@
+\\documentclass[a4paper,11pt]{article}
+
+\\usepackage[utf8]{inputenc}
+\\usepackage[T1]{fontenc}
+\\usepackage{graphicx}
+\\usepackage{amsmath}
+\\usepackage{amssymb}
+\\usepackage{listings}
+\\usepackage{color}
+\\usepackage{hyperref}
+\\usepackage{float}
+
+\\title{Image Processing Tools}
+\\author{Oussama GUELFAA}
+\\date{01-04-2025}
+
+\\begin{document}
+
+\\maketitle
+
+\\tableofcontents
+
+\\newpage
+
+\\section{Introduction}
+
+This document describes the image processing tools developed for the Image Processing project. The tools include:
+
+\\begin{itemize}
+\\item Intensity transformations (gamma correction, contrast stretching)
+\\item Histogram equalization
+\\item Histogram matching
+\\item Damage modeling and image restoration
+\\end{itemize}
+
+\\section{Installation}
+
+The package can be installed directly from GitHub:
+
+\\begin{verbatim}
+pip install git+https://github.com/yourusername/Image-Processing.git
+\\end{verbatim}
+
+Or you can clone the repository and install it locally:
+
+\\begin{verbatim}
+git clone https://github.com/yourusername/Image-Processing.git
+cd Image-Processing
+pip install -e .
+\\end{verbatim}
+
+\\section{Usage}
+
+After installation, you can use the \\texttt{imgproc} command-line tool:
+
+\\begin{verbatim}
+# Apply gamma correction to an image
+imgproc intensity --method gamma --gamma 0.5 --image path/to/image.jpg
+
+# Apply histogram equalization
+imgproc histogram --method custom --bins 256 --image path/to/image.jpg
+
+# Apply histogram matching
+imgproc matching --method custom --peak1 0.3 --peak2 0.7 --image path/to/image.jpg
+\\end{verbatim}
+
+\\section{Intensity Transformations}
+
+\\input{intensity_transformations}
+
+\\section{Histogram Equalization}
+
+\\input{histogram_equalization}
+
+\\section{Histogram Matching}
+
+\\input{histogram_matching}
+
+\\section{Damage Modeling and Image Restoration}
+
+\\input{damage_modeling}
+
+\\section{Conclusion}
+
+This document has presented the image processing tools developed for the project. The tools provide a comprehensive set of functionalities for image processing, including intensity transformations, histogram processing, and image restoration.
+
+\\end{document}

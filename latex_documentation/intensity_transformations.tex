@@ -1,0 +1,69 @@
+Intensity transformations are point operations that modify the intensity values of an image. We have implemented two types of intensity transformations:
+
+\\subsection{Gamma Correction}
+
+Gamma correction is a nonlinear operation used to encode and decode luminance values in images. The gamma correction function is:
+
+\\begin{equation}
+s = c \cdot r^\\gamma
+\\end{equation}
+
+where $r$ is the input intensity, $s$ is the output intensity, $c$ is a constant (usually 1), and $\\gamma$ is the gamma value.
+
+\\subsection{Contrast Stretching}
+
+Contrast stretching (also called normalization) is a simple image enhancement technique that attempts to improve the contrast in an image by stretching the range of intensity values it contains to span a desired range of values. The contrast stretching function is:
+
+\\begin{equation}
+s = \\frac{1}{1 + (\\frac{m}{r})^E}
+\\end{equation}
+
+where $r$ is the input intensity, $s$ is the output intensity, $m$ is the midpoint value (usually 0.5), and $E$ is the contrast factor.
+
+\\subsection{Implementation}
+
+We have implemented these transformations in the \\texttt{intensity\\_transformations.py} module:
+
+\\begin{verbatim}
+def apply_gamma_correction(image, gamma):
+    """
+    Apply gamma correction to an image.
+    
+    Args:
+        image (ndarray): Input image (values between 0 and 1)
+        gamma (float): Gamma value
+        
+    Returns:
+        ndarray: Gamma-corrected image
+    """
+    return np.power(image, gamma)
+
+def apply_contrast_stretching(image, E, m=0.5):
+    """
+    Apply contrast stretching to an image.
+    
+    Args:
+        image (ndarray): Input image (values between 0 and 1)
+        E (float): E parameter (controls the slope of the function)
+        m (float): m parameter (midpoint value, default: 0.5)
+        
+    Returns:
+        ndarray: Contrast-stretched image
+    """
+    return 1.0 / (1.0 + (m / (image + 1e-10)) ** E)
+\\end{verbatim}
+
+\\subsection{Command-Line Interface}
+
+The intensity transformations are available through the command-line interface:
+
+\\begin{verbatim}
+# Apply gamma correction
+imgproc intensity --method gamma --gamma 0.5 --image path/to/image.jpg
+
+# Apply contrast stretching
+imgproc intensity --method contrast --E 4.0 --image path/to/image.jpg
+
+# Apply both transformations
+imgproc intensity --method both --gamma 0.5 --E 4.0 --image path/to/image.jpg
+\\end{verbatim}
