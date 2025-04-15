@@ -29,7 +29,23 @@
     numberstyle=\tiny\color{gray},
     numbersep=5pt,
     tabsize=2,
-    captionpos=b
+    captionpos=b,
+    extendedchars=true,
+    literate=
+        {é}{{\'{e}}}1
+        {è}{{\`{e}}}1
+        {ê}{{\^{e}}}1
+        {ë}{{\"e}}1
+        {à}{{\`{a}}}1
+        {â}{{\^{a}}}1
+        {î}{{\^{i}}}1
+        {ï}{{\"i}}1
+        {ô}{{\^{o}}}1
+        {ö}{{\"o}}1
+        {ù}{{\`{u}}}1
+        {û}{{\^{u}}}1
+        {ü}{{\"u}}1
+        {ç}{{\c{c}}}1
 }
 
 \title{Image Processing Techniques\\
@@ -85,11 +101,11 @@ Our implementation of gamma correction is as follows:
 def apply_gamma_correction(image, gamma):
     """
     Apply gamma correction to the image.
-    
+
     Args:
         image (ndarray): Grayscale image (values between 0 and 1)
         gamma (float): Gamma parameter
-        
+
     Returns:
         ndarray: Image after gamma correction
     """
@@ -97,10 +113,10 @@ def apply_gamma_correction(image, gamma):
     if image.min() < 0 or image.max() > 1:
         print("Warning: Image should have values between 0 and 1. Normalization applied.")
         image = (image - image.min()) / (image.max() - image.min())
-    
+
     # Apply gamma correction
     corrected = np.power(image, gamma)
-    
+
     return corrected
 \end{lstlisting}
 
@@ -132,12 +148,12 @@ Our implementation of contrast stretching is as follows:
 def apply_contrast_stretching(image, E, m=0.5):
     """
     Apply contrast stretching to the image.
-    
+
     Args:
         image (ndarray): Grayscale image (values between 0 and 1)
         E (float): E parameter (controls stretching)
         m (float): Median value (default: 0.5)
-        
+
     Returns:
         ndarray: Image after contrast stretching
     """
@@ -145,14 +161,14 @@ def apply_contrast_stretching(image, E, m=0.5):
     if image.min() < 0 or image.max() > 1:
         print("Warning: Image should have values between 0 and 1. Normalization applied.")
         image = (image - image.min()) / (image.max() - image.min())
-    
+
     # Avoid division by zero
     epsilon = 1e-10
     image_safe = np.maximum(image, epsilon)
-    
+
     # Apply contrast stretching
     stretched = 1 / (1 + (m / image_safe) ** E)
-    
+
     return stretched
 \end{lstlisting}
 
@@ -197,11 +213,11 @@ Our implementation of histogram equalization is as follows:
 def equalize_histogram_custom(image, bins=256):
     """
     Custom implementation of histogram equalization.
-    
+
     Args:
         image (ndarray): Grayscale image (values between 0 and 1)
         bins (int): Number of bins for the histogram
-        
+
     Returns:
         ndarray: Image after histogram equalization
     """
@@ -209,33 +225,33 @@ def equalize_histogram_custom(image, bins=256):
     if image.min() < 0 or image.max() > 1:
         print("Warning: Image should have values between 0 and 1. Normalization applied.")
         image = (image - image.min()) / (image.max() - image.min())
-    
+
     # Calculate the histogram
     hist, bin_edges = np.histogram(image.ravel(), bins=bins, range=(0, 1))
-    
+
     # Calculate the CDF
     cdf = hist.cumsum()
-    
+
     # Normalize the CDF
     cdf = cdf / cdf[-1]
-    
+
     # Create the LUT (Look-Up Table) for the transformation
     # For each intensity value, associate its equalized value
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-    
+
     # Create an array to store the equalized values
     equalized = np.zeros_like(image)
-    
+
     # For each pixel in the image
     for i in range(image.shape[0]):
         for j in range(image.shape[1]):
             # Find the bin index corresponding to the pixel value
             pixel_value = image[i, j]
             bin_index = min(int(pixel_value * bins), bins - 1)
-            
+
             # Apply the equalization transformation
             equalized[i, j] = cdf[bin_index]
-    
+
     return equalized
 \end{lstlisting}
 
@@ -282,21 +298,21 @@ Our implementation of histogram matching is as follows:
 def match_histogram_custom(image, reference_hist, bins=256):
     """
     Custom implementation of histogram matching.
-    
+
     The transformation is defined by:
     x2 = cdf2^(-1)(cdf1(x1))
-    
+
     where:
     - x1 is the intensity value in the source image
     - x2 is the corresponding intensity value in the target image
     - cdf1 is the cumulative distribution function of the source image
     - cdf2 is the cumulative distribution function of the model histogram
-    
+
     Args:
         image (ndarray): Grayscale image (values between 0 and 1)
         reference_hist (ndarray): Reference histogram
         bins (int): Number of bins for the histogram
-        
+
     Returns:
         ndarray: Image after histogram matching
     """
@@ -304,39 +320,39 @@ def match_histogram_custom(image, reference_hist, bins=256):
     if image.min() < 0 or image.max() > 1:
         print("Warning: Image should have values between 0 and 1. Normalization applied.")
         image = (image - image.min()) / (image.max() - image.min())
-    
+
     # Calculate the histogram of the source image
     hist_source, bin_edges_source = np.histogram(image.ravel(), bins=bins, range=(0, 1))
-    
+
     # Calculate the CDF of the source image
     cdf_source = compute_cdf_from_hist(hist_source)
-    
+
     # Calculate the CDF of the reference histogram
     cdf_reference = compute_cdf_from_hist(reference_hist)
-    
+
     # Create the LUT (Look-Up Table) for the transformation
     # For each value of cdf_source, find the corresponding value in cdf_reference
     bin_centers = (bin_edges_source[:-1] + bin_edges_source[1:]) / 2
-    
+
     # Create an array to store the transformed values
     matched = np.zeros_like(image)
-    
+
     # For each pixel in the image
     for i in range(image.shape[0]):
         for j in range(image.shape[1]):
             # Find the bin index corresponding to the pixel value
             pixel_value = image[i, j]
             bin_index = min(int(pixel_value * bins), bins - 1)
-            
+
             # Get the CDF source value for this pixel
             cdf_value = cdf_source[bin_index]
-            
+
             # Find the index in the reference CDF that best matches this value
             idx = np.argmin(np.abs(cdf_reference - cdf_value))
-            
+
             # Convert the index to intensity value
             matched[i, j] = bin_centers[idx]
-    
+
     return matched
 \end{lstlisting}
 
@@ -348,7 +364,7 @@ For histogram matching, we need a reference histogram. We chose to create a bimo
 def create_bimodal_histogram(bins=256, peak1=0.25, peak2=0.75, sigma1=0.05, sigma2=0.05, weight1=0.5, weight2=0.5):
     """
     Create a bimodal reference histogram.
-    
+
     Args:
         bins (int): Number of bins for the histogram
         peak1 (float): Position of the first peak (between 0 and 1)
@@ -357,7 +373,7 @@ def create_bimodal_histogram(bins=256, peak1=0.25, peak2=0.75, sigma1=0.05, sigm
         sigma2 (float): Standard deviation of the second peak
         weight1 (float): Weight of the first peak (between 0 and 1)
         weight2 (float): Weight of the second peak (between 0 and 1)
-        
+
     Returns:
         tuple: (reference_hist, bin_centers) where reference_hist is the bimodal histogram
                and bin_centers are the bin centers
@@ -366,18 +382,18 @@ def create_bimodal_histogram(bins=256, peak1=0.25, peak2=0.75, sigma1=0.05, sigm
     total_weight = weight1 + weight2
     weight1 = weight1 / total_weight
     weight2 = weight2 / total_weight
-    
+
     # Create bins
     bin_edges = np.linspace(0, 1, bins + 1)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-    
+
     # Create the bimodal histogram (sum of two Gaussians)
     reference_hist = weight1 * np.exp(-0.5 * ((bin_centers - peak1) / sigma1) ** 2) / (sigma1 * np.sqrt(2 * np.pi))
     reference_hist += weight2 * np.exp(-0.5 * ((bin_centers - peak2) / sigma2) ** 2) / (sigma2 * np.sqrt(2 * np.pi))
-    
+
     # Normalize the histogram
     reference_hist = reference_hist / np.sum(reference_hist)
-    
+
     return reference_hist, bin_centers
 \end{lstlisting}
 
