@@ -1,0 +1,400 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{amsmath,amsfonts,amssymb}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% Configuration des liens hypertexte
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+}
+
+% Configuration des listings de code
+\lstset{
+    frame=single,
+    breaklines=true,
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=5pt,
+    tabsize=2,
+    captionpos=b
+}
+
+\title{Techniques de Traitement d'Images\\
+\large Implémentation et Théorie}
+\author{Oussama GUELFAA}
+\date{01-04-2025}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+Ce document présente les fondements théoriques et l'implémentation de plusieurs techniques de traitement d'images. Nous aborderons trois techniques principales:
+\begin{itemize}
+    \item Les transformations d'intensité (correction gamma et étirement de contraste)
+    \item L'égalisation d'histogramme
+    \item L'appariement d'histogramme
+\end{itemize}
+
+Pour chaque technique, nous présenterons d'abord les bases théoriques, puis nous expliquerons l'implémentation réalisée dans notre projet Python.
+
+\section{Transformations d'intensité}
+
+Les transformations d'intensité sont des opérations qui modifient la valeur des pixels d'une image sans changer leur position. Ces transformations sont généralement représentées par une fonction de transfert (ou Look-Up Table, LUT) qui associe à chaque niveau d'intensité d'entrée un niveau d'intensité de sortie.
+
+\subsection{Correction gamma}
+
+\subsubsection{Théorie}
+
+La correction gamma est une transformation non linéaire qui modifie les valeurs d'intensité des pixels selon la formule:
+
+\begin{equation}
+    I_{out} = I_{in}^{\gamma}
+\end{equation}
+
+où:
+\begin{itemize}
+    \item $I_{in}$ est l'intensité du pixel d'entrée (normalisée entre 0 et 1)
+    \item $I_{out}$ est l'intensité du pixel de sortie
+    \item $\gamma$ est le paramètre de correction
+\end{itemize}
+
+Lorsque $\gamma < 1$, les zones sombres de l'image sont éclaircies, ce qui peut être utile pour faire ressortir les détails dans les ombres. À l'inverse, lorsque $\gamma > 1$, les zones claires sont assombries, ce qui peut être utile pour réduire la surexposition.
+
+\subsubsection{Implémentation}
+
+Notre implémentation de la correction gamma est la suivante:
+
+\begin{lstlisting}[language=Python, caption=Implémentation de la correction gamma]
+def apply_gamma_correction(image, gamma):
+    """
+    Applique une correction gamma à l'image.
+    
+    Args:
+        image (ndarray): Image en niveaux de gris (valeurs entre 0 et 1)
+        gamma (float): Paramètre gamma
+        
+    Returns:
+        ndarray: Image après correction gamma
+    """
+    # Vérifier que l'image est bien en float avec des valeurs entre 0 et 1
+    if image.min() < 0 or image.max() > 1:
+        print("Attention: L'image doit avoir des valeurs entre 0 et 1. Normalisation appliquée.")
+        image = (image - image.min()) / (image.max() - image.min())
+    
+    # Appliquer la correction gamma
+    corrected = np.power(image, gamma)
+    
+    return corrected
+\end{lstlisting}
+
+\subsection{Étirement de contraste}
+
+\subsubsection{Théorie}
+
+L'étirement de contraste est une transformation qui augmente le contraste d'une image en étirant l'histogramme des intensités. La formule générale est:
+
+\begin{equation}
+    I_{out} = \frac{1}{1 + \left(\frac{m}{I_{in}}\right)^E}
+\end{equation}
+
+où:
+\begin{itemize}
+    \item $I_{in}$ est l'intensité du pixel d'entrée (normalisée entre 0 et 1)
+    \item $I_{out}$ est l'intensité du pixel de sortie
+    \item $m$ est la valeur médiane (généralement 0.5 pour une image normalisée)
+    \item $E$ est le paramètre d'étirement
+\end{itemize}
+
+Plus $E$ est grand, plus le contraste est accentué. Cette transformation est particulièrement utile pour améliorer le contraste des images à faible dynamique.
+
+\subsubsection{Implémentation}
+
+Notre implémentation de l'étirement de contraste est la suivante:
+
+\begin{lstlisting}[language=Python, caption=Implémentation de l'étirement de contraste]
+def apply_contrast_stretching(image, E, m=0.5):
+    """
+    Applique un étirement de contraste à l'image.
+    
+    Args:
+        image (ndarray): Image en niveaux de gris (valeurs entre 0 et 1)
+        E (float): Paramètre E (contrôle l'étirement)
+        m (float): Valeur médiane (par défaut: 0.5)
+        
+    Returns:
+        ndarray: Image après étirement de contraste
+    """
+    # Vérifier que l'image est bien en float avec des valeurs entre 0 et 1
+    if image.min() < 0 or image.max() > 1:
+        print("Attention: L'image doit avoir des valeurs entre 0 et 1. Normalisation appliquée.")
+        image = (image - image.min()) / (image.max() - image.min())
+    
+    # Éviter la division par zéro
+    epsilon = 1e-10
+    image_safe = np.maximum(image, epsilon)
+    
+    # Appliquer l'étirement de contraste
+    stretched = 1 / (1 + (m / image_safe) ** E)
+    
+    return stretched
+\end{lstlisting}
+
+\section{Égalisation d'histogramme}
+
+\subsection{Théorie}
+
+L'égalisation d'histogramme est une technique qui transforme l'image de sorte que son histogramme soit aussi uniforme que possible. Cette transformation améliore généralement le contraste global de l'image.
+
+L'égalisation d'histogramme est définie par la transformation:
+
+\begin{equation}
+    T(x_k) = (L-1) \cdot \text{CDF}_I(k)
+\end{equation}
+
+où:
+\begin{itemize}
+    \item $x_k$ est la valeur d'intensité $k$
+    \item $L$ est la valeur maximale d'intensité (256 pour les images 8 bits)
+    \item $\text{CDF}_I(k)$ est la fonction de distribution cumulative de l'image
+\end{itemize}
+
+La fonction de distribution cumulative (CDF) est définie comme la somme cumulative de l'histogramme normalisé:
+
+\begin{equation}
+    \text{CDF}_I(k) = \sum_{j=0}^{k} p(x_j)
+\end{equation}
+
+où $p(x_j)$ est la probabilité d'occurrence de l'intensité $j$ dans l'image, définie par:
+
+\begin{equation}
+    p(x_j) = \frac{n_j}{n}
+\end{equation}
+
+avec $n_j$ le nombre de pixels ayant l'intensité $j$ et $n$ le nombre total de pixels dans l'image.
+
+\subsection{Implémentation}
+
+Notre implémentation de l'égalisation d'histogramme est la suivante:
+
+\begin{lstlisting}[language=Python, caption=Implémentation de l'égalisation d'histogramme]
+def equalize_histogram_custom(image, bins=256):
+    """
+    Implémentation personnalisée de l'égalisation d'histogramme.
+    
+    Args:
+        image (ndarray): Image en niveaux de gris (valeurs entre 0 et 1)
+        bins (int): Nombre de bins pour l'histogramme
+        
+    Returns:
+        ndarray: Image après égalisation d'histogramme
+    """
+    # Vérifier que l'image est bien en float avec des valeurs entre 0 et 1
+    if image.min() < 0 or image.max() > 1:
+        print("Attention: L'image doit avoir des valeurs entre 0 et 1. Normalisation appliquée.")
+        image = (image - image.min()) / (image.max() - image.min())
+    
+    # Calculer l'histogramme
+    hist, bin_edges = np.histogram(image.ravel(), bins=bins, range=(0, 1))
+    
+    # Calculer la CDF
+    cdf = hist.cumsum()
+    
+    # Normaliser la CDF
+    cdf = cdf / cdf[-1]
+    
+    # Créer la LUT (Look-Up Table) pour la transformation
+    # Pour chaque valeur d'intensité, on associe sa valeur égalisée
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    
+    # Créer un tableau pour stocker les valeurs égalisées
+    equalized = np.zeros_like(image)
+    
+    # Pour chaque pixel de l'image
+    for i in range(image.shape[0]):
+        for j in range(image.shape[1]):
+            # Trouver l'index du bin correspondant à la valeur du pixel
+            pixel_value = image[i, j]
+            bin_index = min(int(pixel_value * bins), bins - 1)
+            
+            # Appliquer la transformation d'égalisation
+            equalized[i, j] = cdf[bin_index]
+    
+    return equalized
+\end{lstlisting}
+
+\section{Appariement d'histogramme}
+
+\subsection{Théorie}
+
+L'appariement d'histogramme (histogram matching) est une technique qui transforme l'image de sorte que son histogramme corresponde à un histogramme modèle. Contrairement à l'égalisation d'histogramme qui vise à obtenir un histogramme uniforme, l'appariement d'histogramme permet de cibler n'importe quelle distribution.
+
+L'appariement d'histogramme est défini par la transformation:
+
+\begin{equation}
+    x_2 = \text{CDF}_2^{-1}(\text{CDF}_1(x_1))
+\end{equation}
+
+où:
+\begin{itemize}
+    \item $x_1$ est la valeur d'intensité dans l'image source
+    \item $x_2$ est la valeur d'intensité correspondante dans l'image cible
+    \item $\text{CDF}_1$ est la fonction de distribution cumulative de l'image source
+    \item $\text{CDF}_2$ est la fonction de distribution cumulative de l'histogramme modèle
+\end{itemize}
+
+Le principe est le suivant:
+\begin{enumerate}
+    \item Calculer l'histogramme et la CDF de l'image source
+    \item Définir un histogramme de référence (dans notre cas, un histogramme bimodal)
+    \item Calculer la CDF de l'histogramme de référence
+    \item Pour chaque niveau d'intensité $x_1$ dans l'image source:
+    \begin{itemize}
+        \item Trouver la valeur de $\text{CDF}_1(x_1)$
+        \item Trouver la valeur $x_2$ telle que $\text{CDF}_2(x_2) = \text{CDF}_1(x_1)$
+        \item Remplacer $x_1$ par $x_2$ dans l'image résultante
+    \end{itemize}
+\end{enumerate}
+
+Comme les valeurs d'intensité sont discrètes, une interpolation est nécessaire pour trouver la valeur exacte de $x_2$.
+
+\subsection{Implémentation}
+
+Notre implémentation de l'appariement d'histogramme est la suivante:
+
+\begin{lstlisting}[language=Python, caption=Implémentation de l'appariement d'histogramme]
+def match_histogram_custom(image, reference_hist, bins=256):
+    """
+    Implémentation personnalisée de l'appariement d'histogramme.
+    
+    La transformation est définie par:
+    x2 = cdf2^(-1)(cdf1(x1))
+    
+    où:
+    - x1 est la valeur d'intensité dans l'image source
+    - x2 est la valeur d'intensité correspondante dans l'image cible
+    - cdf1 est la fonction de distribution cumulative de l'image source
+    - cdf2 est la fonction de distribution cumulative de l'histogramme modèle
+    
+    Args:
+        image (ndarray): Image en niveaux de gris (valeurs entre 0 et 1)
+        reference_hist (ndarray): Histogramme de référence
+        bins (int): Nombre de bins pour l'histogramme
+        
+    Returns:
+        ndarray: Image après appariement d'histogramme
+    """
+    # Vérifier que l'image est bien en float avec des valeurs entre 0 et 1
+    if image.min() < 0 or image.max() > 1:
+        print("Attention: L'image doit avoir des valeurs entre 0 et 1. Normalisation appliquée.")
+        image = (image - image.min()) / (image.max() - image.min())
+    
+    # Calculer l'histogramme de l'image source
+    hist_source, bin_edges_source = np.histogram(image.ravel(), bins=bins, range=(0, 1))
+    
+    # Calculer la CDF de l'image source
+    cdf_source = compute_cdf_from_hist(hist_source)
+    
+    # Calculer la CDF de l'histogramme de référence
+    cdf_reference = compute_cdf_from_hist(reference_hist)
+    
+    # Créer la LUT (Look-Up Table) pour la transformation
+    # Pour chaque valeur de cdf_source, trouver la valeur correspondante dans cdf_reference
+    bin_centers = (bin_edges_source[:-1] + bin_edges_source[1:]) / 2
+    
+    # Créer un tableau pour stocker les valeurs transformées
+    matched = np.zeros_like(image)
+    
+    # Pour chaque pixel de l'image
+    for i in range(image.shape[0]):
+        for j in range(image.shape[1]):
+            # Trouver l'index du bin correspondant à la valeur du pixel
+            pixel_value = image[i, j]
+            bin_index = min(int(pixel_value * bins), bins - 1)
+            
+            # Obtenir la valeur de la CDF source pour ce pixel
+            cdf_value = cdf_source[bin_index]
+            
+            # Trouver l'index dans la CDF de référence qui correspond le mieux à cette valeur
+            idx = np.argmin(np.abs(cdf_reference - cdf_value))
+            
+            # Convertir l'index en valeur d'intensité
+            matched[i, j] = bin_centers[idx]
+    
+    return matched
+\end{lstlisting}
+
+\subsection{Création d'un histogramme bimodal}
+
+Pour l'appariement d'histogramme, nous avons besoin d'un histogramme de référence. Nous avons choisi de créer un histogramme bimodal, qui est une combinaison de deux distributions gaussiennes:
+
+\begin{lstlisting}[language=Python, caption=Création d'un histogramme bimodal]
+def create_bimodal_histogram(bins=256, peak1=0.25, peak2=0.75, sigma1=0.05, sigma2=0.05, weight1=0.5, weight2=0.5):
+    """
+    Crée un histogramme bimodal de référence.
+    
+    Args:
+        bins (int): Nombre de bins pour l'histogramme
+        peak1 (float): Position du premier pic (entre 0 et 1)
+        peak2 (float): Position du deuxième pic (entre 0 et 1)
+        sigma1 (float): Écart-type du premier pic
+        sigma2 (float): Écart-type du deuxième pic
+        weight1 (float): Poids du premier pic (entre 0 et 1)
+        weight2 (float): Poids du deuxième pic (entre 0 et 1)
+        
+    Returns:
+        tuple: (reference_hist, bin_centers) où reference_hist est l'histogramme bimodal
+               et bin_centers sont les centres des bins
+    """
+    # Normaliser les poids
+    total_weight = weight1 + weight2
+    weight1 = weight1 / total_weight
+    weight2 = weight2 / total_weight
+    
+    # Créer les bins
+    bin_edges = np.linspace(0, 1, bins + 1)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    
+    # Créer l'histogramme bimodal (somme de deux gaussiennes)
+    reference_hist = weight1 * np.exp(-0.5 * ((bin_centers - peak1) / sigma1) ** 2) / (sigma1 * np.sqrt(2 * np.pi))
+    reference_hist += weight2 * np.exp(-0.5 * ((bin_centers - peak2) / sigma2) ** 2) / (sigma2 * np.sqrt(2 * np.pi))
+    
+    # Normaliser l'histogramme
+    reference_hist = reference_hist / np.sum(reference_hist)
+    
+    return reference_hist, bin_centers
+\end{lstlisting}
+
+\section{Conclusion}
+
+Dans ce document, nous avons présenté les fondements théoriques et l'implémentation de trois techniques importantes de traitement d'images:
+\begin{itemize}
+    \item Les transformations d'intensité (correction gamma et étirement de contraste)
+    \item L'égalisation d'histogramme
+    \item L'appariement d'histogramme
+\end{itemize}
+
+Ces techniques sont essentielles pour améliorer la qualité visuelle des images et pour préparer les images pour d'autres traitements plus avancés. Elles constituent la base de nombreux algorithmes de traitement d'images et de vision par ordinateur.
+
+Notre implémentation en Python permet d'appliquer facilement ces techniques à des images en niveaux de gris, avec la possibilité de visualiser les résultats et de comparer différentes approches.
+
+\end{document}
