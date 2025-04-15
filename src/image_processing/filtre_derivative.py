@@ -4,6 +4,9 @@ Filtres dérivatifs pour la détection de contours
 Ce script démontre l'utilisation des opérateurs de Prewitt et Sobel pour la détection
 de contours dans une image. Ces filtres calculent les dérivées directionnelles (gradients)
 de l'image pour mettre en évidence les zones de changement rapide d'intensité.
+
+Author: Oussama GUELFAA
+Date: 01-04-2025
 """
 
 import numpy as np

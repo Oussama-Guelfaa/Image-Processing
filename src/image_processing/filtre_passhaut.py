@@ -1,3 +1,15 @@
+"""
+Filtres passe-haut pour le traitement d'images
+
+Ce script démontre l'application de différents filtres passe-haut sur des images de cellules.
+Les filtres passe-haut permettent de mettre en évidence les contours et les détails fins
+en supprimant les basses fréquences. Deux approches sont comparées : la soustraction
+d'un filtre passe-bas et l'application directe d'un filtre laplacien.
+
+Author: Oussama GUELFAA
+Date: 01-04-2025
+"""
+
 import matplotlib.pyplot as plt
 from skimage import io
 from skimage.filters import gaussian, laplace

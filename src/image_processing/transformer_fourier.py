@@ -4,6 +4,9 @@ Transformée de Fourier et analyse spectrale d'images
 Ce script démontre comment calculer et visualiser la transformée de Fourier d'une image.
 Il permet d'observer la décomposition d'une image en ses composantes fréquentielles,
 en séparant l'amplitude (intensité des fréquences) et la phase (position des structures).
+
+Author: Oussama GUELFAA
+Date: 01-04-2025
 """
 
 import matplotlib.pyplot as plt

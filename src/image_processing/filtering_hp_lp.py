@@ -3,6 +3,9 @@ Filtrage passe-haut et passe-bas dans le domaine fréquentiel
 
 Ce script démontre comment appliquer des filtres passe-haut et passe-bas
 à une image dans le domaine fréquentiel en utilisant la transformée de Fourier.
+
+Author: Oussama GUELFAA
+Date: 01-04-2025
 """
 
 import matplotlib.pyplot as plt

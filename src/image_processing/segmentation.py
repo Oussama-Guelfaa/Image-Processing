@@ -7,6 +7,9 @@ Ce script implémente deux méthodes de segmentation d'images basées sur les hi
 
 Ces méthodes sont appliquées sur des images de cellules pour démontrer leur efficacité
 dans la séparation des objets d'intérêt du fond.
+
+Author: Oussama GUELFAA
+Date: 01-04-2025
 """
 
 import numpy as np

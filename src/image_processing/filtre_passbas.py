@@ -5,6 +5,9 @@ Ce script démontre l'application de différents filtres passe-bas sur une image
 Les filtres passe-bas permettent de réduire le bruit et de lisser l'image en supprimant
 les hautes fréquences (détails fins). Chaque filtre a des caractéristiques spécifiques
 qui le rendent plus ou moins adapté à certaines applications.
+
+Author: Oussama GUELFAA
+Date: 01-04-2025
 """
 
 import matplotlib.pyplot as plt

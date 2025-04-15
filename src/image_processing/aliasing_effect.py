@@ -1,3 +1,14 @@
+"""
+Démonstration de l'effet d'aliasing dans le traitement d'images
+
+Ce script illustre l'effet d'aliasing en échantillonnant une fonction sinusoïdale
+à différentes fréquences. Il montre comment des motifs indésirables apparaissent
+lorsque la fréquence d'échantillonnage est insuffisante par rapport à la fréquence du signal.
+
+Author: Oussama GUELFAA
+Date: 01-04-2025
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import os

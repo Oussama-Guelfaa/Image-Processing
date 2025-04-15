@@ -5,6 +5,9 @@ Ce script explore l'importance relative de l'amplitude et de la phase dans la
 transformée de Fourier d'une image. Il démontre comment la reconstruction
 d'une image est affectée lorsqu'on utilise uniquement l'information d'amplitude
 ou uniquement l'information de phase.
+
+Author: Oussama GUELFAA
+Date: 01-04-2025
 """
 
 import matplotlib.pyplot as plt

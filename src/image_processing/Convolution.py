@@ -3,6 +3,9 @@ Convolution d'images et application de différents filtres
 
 Ce script démontre l'application de différents filtres de convolution sur une image
 de cellules sanguines pour illustrer les effets de lissage et de détection de contours.
+
+Author: Oussama GUELFAA
+Date: 01-04-2025
 """
 
 import matplotlib.pyplot as plt
