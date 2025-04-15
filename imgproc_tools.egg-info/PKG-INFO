@@ -1,0 +1,144 @@
+Metadata-Version: 2.4
+Name: imgproc-tools
+Version: 0.1.0
+Summary: A collection of image processing tools
+Home-page: https://github.com/yourusername/Image-Processing
+Author: Oussama GUELFAA
+Author-email: Oussama GUELFAA <your.email@example.com>
+License: MIT
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+Requires-Dist: numpy>=1.19.0
+Requires-Dist: matplotlib>=3.3.0
+Requires-Dist: scikit-image>=0.17.0
+Dynamic: author
+Dynamic: home-page
+Dynamic: requires-python
+
+# Image Processing Tools
+
+This project provides tools for image processing and analysis, including intensity transformations, histogram equalization, histogram matching, and more. It is designed to be easy to use and educational.
+
+## Project Structure
+
+```
+Image-Processing/
+├── data/                  # Image files and other data
+├── docs/                  # Documentation
+├── examples/              # Example scripts
+├── latex_documentation/   # LaTeX documentation
+├── src/                   # Source code
+│   ├── image_processing/  # Image processing modules
+│   │   ├── histogram_equalization.py  # Histogram equalization
+│   │   ├── histogram_matching.py      # Histogram matching
+│   │   ├── intensity_transformations.py # Gamma correction and contrast stretching
+│   │   └── ... (other modules)
+│   └── cli.py             # Command-line interface
+├── main.py                # Main entry point
+├── setup.py               # Package installation configuration
+└── README.md              # This file
+```
+
+## Installation
+
+You can install this package directly from GitHub:
+
+```bash
+# Install from GitHub
+pip install git+https://github.com/yourusername/Image-Processing.git
+```
+
+Or you can clone the repository and install it locally:
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/Image-Processing.git
+cd Image-Processing
+
+# Install the package
+pip install -e .
+```
+
+## Usage
+
+After installation, you can use the `imgproc` command-line tool:
+
+### Intensity Transformations
+
+```bash
+# Apply gamma correction to an image
+imgproc intensity --method gamma --gamma 0.5 --image path/to/image.jpg
+
+# Apply contrast stretching
+imgproc intensity --method contrast --E 4.0 --image path/to/image.jpg
+
+# Apply both transformations
+imgproc intensity --method both --gamma 0.5 --E 4.0 --image path/to/image.jpg
+```
+
+### Histogram Processing
+
+```bash
+# Apply histogram equalization
+imgproc histogram --method custom --bins 256 --image path/to/image.jpg
+
+# Apply histogram matching
+imgproc matching --method custom --peak1 0.3 --peak2 0.7 --image path/to/image.jpg
+```
+
+### Damage Modeling and Image Restoration
+
+```bash
+# Generate a checkerboard image
+imgproc checkerboard --size 8 --square_size 32 --output checkerboard.png
+
+# Apply damage to an image using a Gaussian PSF
+imgproc damage --psf gaussian --sigma 3.0 --noise 0.01 --image path/to/image.jpg --output damaged.png
+
+# Apply damage using a motion blur PSF
+imgproc damage --psf motion --length 15 --angle 45 --noise 0.01 --image path/to/image.jpg
+
+# Restore an image using the inverse filter
+imgproc restore --method inverse --psf gaussian --sigma 3.0 --image damaged.png --output restored.png
+
+# Restore an image using the Wiener filter
+imgproc restore --method wiener --k 0.01 --psf gaussian --sigma 3.0 --image damaged.png
+
+# Compare different restoration methods
+imgproc restore --method compare --psf gaussian --sigma 3.0 --image damaged.png
+```
+
+You can also use positional arguments for image paths:
+
+```bash
+# Using positional arguments for image paths
+imgproc intensity --method gamma --gamma 0.5 path/to/image.jpg
+imgproc damage --psf gaussian --sigma 3.0 path/to/image.jpg
+imgproc restore --method wiener --k 0.01 damaged.png
+```
+
+You can also run the project using the main.py script without installation:
+
+```bash
+# Apply intensity transformations
+python main.py intensity --method gamma --gamma 0.5 --image path/to/image.jpg
+
+# Apply damage to an image
+python main.py damage --psf gaussian --sigma 3.0 --noise 0.01 --image path/to/image.jpg
+
+# Restore an image
+python main.py restore --method wiener --k 0.01 --psf gaussian --sigma 3.0 --image damaged.png
+```
+
+## Examples
+
+Check the examples directory for sample applications.
+
+## Dependencies
+
+- NumPy
+- Matplotlib
+- scikit-image

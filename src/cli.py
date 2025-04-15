@@ -161,6 +161,9 @@ Examples:
     if args.command == 'intensity':
         # Convert --method to --type for intensity command
         args.type = args.method
+    elif args.command in ['damage', 'restore', 'checkerboard']:
+        # These commands are handled by the damage_modeling module
+        pass
 
     # Process the command
     core.process_command(args)

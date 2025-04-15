@@ -232,6 +232,190 @@ def process_matching_command(args):
         print("Application de l'appariement d'histogramme avec les deux méthodes...")
         equalized, matched_custom, matched_builtin = histogram_matching.visualize_matching_results(image, reference_hist, bins=args.bins)
 
+def process_damage_command(args):
+    """Process the damage command."""
+    # Import the damage modeling module
+    from src.image_processing import damage_modeling
+
+    # Use positional argument for image if provided
+    if hasattr(args, 'image_path') and args.image_path and not args.image:
+        args.image = args.image_path
+
+    # Load the image
+    image = damage_modeling.load_image() if args.image is None else \
+            damage_modeling.img_as_float(damage_modeling.io.imread(args.image, as_gray=True))
+
+    # Generate the PSF
+    if args.psf == 'gaussian':
+        psf = damage_modeling.generate_gaussian_psf(size=64, sigma=args.sigma)
+        psf_title = f"Gaussian PSF (sigma={args.sigma})"
+    else:  # motion
+        psf = damage_modeling.generate_motion_blur_psf(size=64, length=args.length, angle=args.angle)
+        psf_title = f"Motion Blur PSF (length={args.length}, angle={args.angle})"
+
+    # Visualize the PSF
+    damage_modeling.visualize_psf(psf, title=psf_title)
+
+    # Apply damage to the image
+    damaged = damage_modeling.apply_damage(image, psf, noise_level=args.noise)
+
+    # Visualize the original and damaged images
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    axes[0].imshow(image, cmap='gray')
+    axes[0].set_title('Original Image')
+    axes[0].axis('off')
+    axes[1].imshow(damaged, cmap='gray')
+    axes[1].set_title('Damaged Image')
+    axes[1].axis('off')
+    plt.tight_layout()
+    plt.show()
+
+    # Save the output if requested
+    if args.output:
+        result_uint8 = damage_modeling.img_as_ubyte(damaged)
+        damage_modeling.io.imsave(args.output, result_uint8)
+        print(f"Damaged image saved to: {args.output}")
+
+def process_restore_command(args):
+    """Process the restore command."""
+    # Import the damage modeling module
+    from src.image_processing import damage_modeling
+
+    # Use positional argument for image if provided
+    if hasattr(args, 'image_path') and args.image_path and not args.image:
+        args.image = args.image_path
+
+    # Load the image
+    damaged_image = damage_modeling.load_image() if args.image is None else \
+                   damage_modeling.img_as_float(damage_modeling.io.imread(args.image, as_gray=True))
+
+    # Generate the PSF
+    if args.psf == 'gaussian':
+        psf = damage_modeling.generate_gaussian_psf(size=64, sigma=args.sigma)
+        psf_title = f"Gaussian PSF (sigma={args.sigma})"
+    else:  # motion
+        psf = damage_modeling.generate_motion_blur_psf(size=64, length=args.length, angle=args.angle)
+        psf_title = f"Motion Blur PSF (length={args.length}, angle={args.angle})"
+
+    # Visualize the PSF
+    damage_modeling.visualize_psf(psf, title=psf_title)
+
+    if args.method == 'compare':
+        # Compare different restoration methods
+        print("Comparing different restoration methods...")
+
+        # Apply different restoration methods
+        restored_inverse = damage_modeling.inverse_filter(damaged_image, psf, epsilon=1e-3)
+        restored_wiener_low = damage_modeling.wiener_filter(damaged_image, psf, K=0.001)
+        restored_wiener_med = damage_modeling.wiener_filter(damaged_image, psf, K=0.01)
+        restored_wiener_high = damage_modeling.wiener_filter(damaged_image, psf, K=0.1)
+
+        # Visualize the results
+        fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+
+        axes[0, 0].imshow(damaged_image, cmap='gray')
+        axes[0, 0].set_title('Damaged Image')
+        axes[0, 0].axis('off')
+
+        axes[0, 1].imshow(restored_inverse, cmap='gray')
+        axes[0, 1].set_title('Inverse Filter')
+        axes[0, 1].axis('off')
+
+        axes[0, 2].imshow(restored_wiener_low, cmap='gray')
+        axes[0, 2].set_title('Wiener Filter (K=0.001)')
+        axes[0, 2].axis('off')
+
+        axes[1, 0].imshow(restored_wiener_med, cmap='gray')
+        axes[1, 0].set_title('Wiener Filter (K=0.01)')
+        axes[1, 0].axis('off')
+
+        axes[1, 1].imshow(restored_wiener_high, cmap='gray')
+        axes[1, 1].set_title('Wiener Filter (K=0.1)')
+        axes[1, 1].axis('off')
+
+        plt.tight_layout()
+        plt.show()
+
+        # Save the output if requested
+        if args.output:
+            # Save the medium Wiener filter result
+            result_uint8 = damage_modeling.img_as_ubyte(restored_wiener_med)
+            damage_modeling.io.imsave(args.output, result_uint8)
+            print(f"Restored image (Wiener K=0.01) saved to: {args.output}")
+
+            # Save other results with suffixes
+            base_name, ext = os.path.splitext(args.output)
+            damage_modeling.io.imsave(f"{base_name}_inverse{ext}", damage_modeling.img_as_ubyte(restored_inverse))
+            damage_modeling.io.imsave(f"{base_name}_wiener_low{ext}", damage_modeling.img_as_ubyte(restored_wiener_low))
+            damage_modeling.io.imsave(f"{base_name}_wiener_high{ext}", damage_modeling.img_as_ubyte(restored_wiener_high))
+            print(f"All restoration results saved with different suffixes.")
+
+    elif args.method == 'inverse':
+        # Apply inverse filter
+        print("Applying inverse filter...")
+        restored = damage_modeling.inverse_filter(damaged_image, psf, epsilon=1e-3)
+
+        # Visualize the result
+        fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+        axes[0].imshow(damaged_image, cmap='gray')
+        axes[0].set_title('Damaged Image')
+        axes[0].axis('off')
+        axes[1].imshow(restored, cmap='gray')
+        axes[1].set_title('Restored Image (Inverse Filter)')
+        axes[1].axis('off')
+        plt.tight_layout()
+        plt.show()
+
+        # Save the output if requested
+        if args.output:
+            result_uint8 = damage_modeling.img_as_ubyte(restored)
+            damage_modeling.io.imsave(args.output, result_uint8)
+            print(f"Restored image saved to: {args.output}")
+
+    else:  # wiener
+        # Apply Wiener filter
+        print(f"Applying Wiener filter with K={args.k}...")
+        restored = damage_modeling.wiener_filter(damaged_image, psf, K=args.k)
+
+        # Visualize the result
+        fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+        axes[0].imshow(damaged_image, cmap='gray')
+        axes[0].set_title('Damaged Image')
+        axes[0].axis('off')
+        axes[1].imshow(restored, cmap='gray')
+        axes[1].set_title(f'Restored Image (Wiener Filter, K={args.k})')
+        axes[1].axis('off')
+        plt.tight_layout()
+        plt.show()
+
+        # Save the output if requested
+        if args.output:
+            result_uint8 = damage_modeling.img_as_ubyte(restored)
+            damage_modeling.io.imsave(args.output, result_uint8)
+            print(f"Restored image saved to: {args.output}")
+
+def process_checkerboard_command(args):
+    """Process the checkerboard command."""
+    # Import the damage modeling module
+    from src.image_processing import damage_modeling
+
+    # Generate the checkerboard
+    checkerboard = damage_modeling.generate_checkerboard(size=args.size, square_size=args.square_size)
+
+    # Visualize the checkerboard
+    plt.figure(figsize=(5, 5))
+    plt.imshow(checkerboard, cmap='gray')
+    plt.title('Checkerboard Image')
+    plt.axis('off')
+    plt.tight_layout()
+    plt.show()
+
+    # Save the output if requested
+    if args.output:
+        result_uint8 = damage_modeling.img_as_ubyte(checkerboard)
+        damage_modeling.io.imsave(args.output, result_uint8)
+        print(f"Checkerboard image saved to: {args.output}")
+
 def process_command(args):
     """Process the command based on the arguments."""
     if args.command == 'intensity':
@@ -240,5 +424,11 @@ def process_command(args):
         process_histogram_command(args)
     elif args.command == 'matching':
         process_matching_command(args)
+    elif args.command == 'damage':
+        process_damage_command(args)
+    elif args.command == 'restore':
+        process_restore_command(args)
+    elif args.command == 'checkerboard':
+        process_checkerboard_command(args)
     else:
         print(f"Unknown command: {args.command}")
