@@ -14,29 +14,34 @@ fi
 # Se placer dans le répertoire du script
 cd "$(dirname "$0")"
 
-# Compiler le document LaTeX (deux fois pour les références)
-pdflatex image_processing_documentation.tex
-pdflatex image_processing_documentation.tex
+# Compiler le document LaTeX en anglais (deux fois pour les références)
+pdflatex image_processing_documentation_en.tex
+pdflatex image_processing_documentation_en.tex
 
 # Vérifier si la compilation a réussi
-if [ -f "image_processing_documentation.pdf" ]; then
-    echo "Compilation réussie ! Le document PDF a été créé."
-    
+if [ -f "image_processing_documentation_en.pdf" ]; then
+    echo "Compilation successful! The PDF document has been created."
+
     # Ouvrir le PDF (fonctionne sur macOS, Linux et Windows avec WSL)
     if [ "$(uname)" == "Darwin" ]; then
-        open image_processing_documentation.pdf
+        open image_processing_documentation_en.pdf
     elif [ "$(uname)" == "Linux" ]; then
         if command -v xdg-open &> /dev/null; then
-            xdg-open image_processing_documentation.pdf
+            xdg-open image_processing_documentation_en.pdf
         else
-            echo "Le document PDF est disponible à: $(pwd)/image_processing_documentation.pdf"
+            echo "The PDF document is available at: $(pwd)/image_processing_documentation_en.pdf"
         fi
     else
-        echo "Le document PDF est disponible à: $(pwd)/image_processing_documentation.pdf"
+        echo "The PDF document is available at: $(pwd)/image_processing_documentation_en.pdf"
     fi
 else
-    echo "La compilation a échoué. Veuillez vérifier les erreurs ci-dessus."
+    echo "Compilation failed. Please check the errors above."
 fi
+
+# Uncomment the following lines to compile the French version (requires additional packages)
+# # Compiler le document LaTeX en français (deux fois pour les références)
+# pdflatex image_processing_documentation.tex
+# pdflatex image_processing_documentation.tex
 
 # Nettoyer les fichiers temporaires
 rm -f *.aux *.log *.toc *.out

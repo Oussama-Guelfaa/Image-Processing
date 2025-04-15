@@ -1,16 +1,16 @@
-# Documentation LaTeX du Projet de Traitement d'Images
+# LaTeX Documentation for the Image Processing Project
 
-Ce dossier contient la documentation LaTeX du projet de traitement d'images. Le document explique en détail la théorie et l'implémentation des techniques suivantes :
+This folder contains the LaTeX documentation for the image processing project. The document explains in detail the theory and implementation of the following techniques:
 
-1. Transformations d'intensité (correction gamma et étirement de contraste)
-2. Égalisation d'histogramme
-3. Appariement d'histogramme
+1. Intensity transformations (gamma correction and contrast stretching)
+2. Histogram equalization
+3. Histogram matching
 
-## Prérequis
+## Prerequisites
 
-Pour compiler le document LaTeX, vous avez besoin d'une distribution LaTeX comme BasicTeX ou TeX Live.
+To compile the LaTeX document, you need a LaTeX distribution like BasicTeX or TeX Live.
 
-### Installation de BasicTeX
+### Installing BasicTeX
 
 #### macOS
 ```bash
@@ -23,42 +23,42 @@ sudo apt-get install texlive-latex-base texlive-latex-recommended texlive-latex-
 ```
 
 #### Windows
-Téléchargez et installez MiKTeX ou TeX Live depuis leurs sites officiels.
+Download and install MiKTeX or TeX Live from their official websites.
 
-## Compilation du document
+## Compiling the Document
 
-### Méthode automatique (recommandée)
+### Automatic Method (Recommended)
 
-Utilisez le script shell fourni :
+Use the provided shell script:
 
 ```bash
 ./compile_latex.sh
 ```
 
-Ce script vérifie si pdflatex est installé, compile le document et ouvre le PDF résultant.
+This script checks if pdflatex is installed, compiles the document, and opens the resulting PDF.
 
-### Méthode manuelle
+### Manual Method
 
-Si vous préférez compiler manuellement, exécutez les commandes suivantes :
+If you prefer to compile manually, run the following commands:
 
 ```bash
-pdflatex image_processing_documentation.tex
-pdflatex image_processing_documentation.tex
+pdflatex image_processing_documentation_en.tex
+pdflatex image_processing_documentation_en.tex
 ```
 
-La commande est exécutée deux fois pour assurer que toutes les références sont correctement résolues.
+The command is executed twice to ensure that all references are properly resolved.
 
-## Contenu du document
+## Document Content
 
-Le document PDF généré contient :
+The generated PDF document contains:
 
-- Une introduction aux techniques de traitement d'images
-- Les fondements théoriques de chaque technique
-- Les formules mathématiques utilisées
-- Des extraits de code Python montrant l'implémentation
-- Des explications sur les paramètres et leur influence sur les résultats
+- An introduction to image processing techniques
+- The theoretical foundations of each technique
+- The mathematical formulas used
+- Python code excerpts showing the implementation
+- Explanations of the parameters and their influence on the results
 
-## Auteur
+## Author
 
 Oussama GUELFAA
 Date: 01-04-2025
