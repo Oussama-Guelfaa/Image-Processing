@@ -65,6 +65,20 @@ def main():
     histogram_parser.add_argument('--bins', type=int, default=256, help='Number of bins for the histogram')
     histogram_parser.add_argument('--output', type=str, default=None, help='Path to save the equalized image')
 
+    # Histogram matching parser
+    matching_parser = subparsers.add_parser('matching', help='Apply histogram matching to an image')
+    matching_parser.add_argument('--image', type=str, default=None, help='Path to the image file (default: phobos.jpg)')
+    matching_parser.add_argument('--method', choices=['builtin', 'custom', 'both'], default='both',
+                                help='Method to use for histogram matching')
+    matching_parser.add_argument('--bins', type=int, default=256, help='Number of bins for the histogram')
+    matching_parser.add_argument('--peak1', type=float, default=0.3, help='Position of the first peak in the bimodal histogram')
+    matching_parser.add_argument('--peak2', type=float, default=0.7, help='Position of the second peak in the bimodal histogram')
+    matching_parser.add_argument('--sigma1', type=float, default=0.05, help='Standard deviation of the first peak')
+    matching_parser.add_argument('--sigma2', type=float, default=0.05, help='Standard deviation of the second peak')
+    matching_parser.add_argument('--weight1', type=float, default=0.6, help='Weight of the first peak')
+    matching_parser.add_argument('--weight2', type=float, default=0.4, help='Weight of the second peak')
+    matching_parser.add_argument('--output', type=str, default=None, help='Path to save the matched image')
+
     # Parse arguments
     args = parser.parse_args()
 
@@ -241,6 +255,113 @@ def main():
         else:  # both
             # Test both methods
             equalized_builtin, equalized_custom = histogram_equalization.test_histogram_equalization(image)
+
+    elif args.command == 'matching':
+        image_info = f" on {args.image}" if args.image else ""
+        output_info = f" and saving to {args.output}" if args.output else ""
+        bins_info = f" with {args.bins} bins"
+        peaks_info = f" (peaks at {args.peak1:.2f} and {args.peak2:.2f})"
+
+        if args.method == 'builtin':
+            print(f"Applying histogram matching using built-in method{image_info}{bins_info}{peaks_info}{output_info}")
+        elif args.method == 'custom':
+            print(f"Applying histogram matching using custom method{image_info}{bins_info}{peaks_info}{output_info}")
+        else:  # both
+            print(f"Applying histogram matching using both methods{image_info}{bins_info}{peaks_info}{output_info}")
+
+        # Import here to avoid circular imports
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+        # Import the histogram matching module
+        from src.image_processing import histogram_matching
+
+        # Load the image
+        image = histogram_matching.load_image() if args.image is None else \
+                histogram_matching.img_as_float(histogram_matching.io.imread(args.image, as_gray=True))
+
+        # Visualize the histogram of the image
+        print("Visualisation de l'histogramme de l'image...")
+        histogram_matching.visualize_histogram(image, bins=args.bins, title=f"Histogramme de l'image originale")
+
+        # Create a bimodal histogram as reference
+        print("Création d'un histogramme bimodal de référence...")
+        reference_hist, _ = histogram_matching.create_bimodal_histogram(
+            bins=args.bins,
+            peak1=args.peak1,
+            peak2=args.peak2,
+            sigma1=args.sigma1,
+            sigma2=args.sigma2,
+            weight1=args.weight1,
+            weight2=args.weight2
+        )
+
+        # Visualize the reference histogram
+        histogram_matching.visualize_bimodal_histogram(
+            bins=args.bins,
+            peak1=args.peak1,
+            peak2=args.peak2,
+            sigma1=args.sigma1,
+            sigma2=args.sigma2,
+            weight1=args.weight1,
+            weight2=args.weight2,
+            title="Histogramme bimodal de référence"
+        )
+
+        # Apply histogram matching based on the method
+        if args.method == 'builtin':
+            # Apply built-in histogram matching
+            print("Application de l'appariement d'histogramme avec les fonctions intégrées...")
+            matched = histogram_matching.match_histogram_builtin(image, reference_hist, bins=args.bins)
+
+            # Visualize the result
+            fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+            axes[0].imshow(image, cmap='gray')
+            axes[0].set_title('Image originale')
+            axes[0].axis('off')
+            axes[1].imshow(matched, cmap='gray')
+            axes[1].set_title('Appariement (builtin)')
+            axes[1].axis('off')
+            plt.tight_layout()
+            plt.show()
+
+            # Visualize the histogram of the matched image
+            histogram_matching.visualize_histogram(matched, bins=args.bins, title="Histogramme après appariement (builtin)")
+
+            # Save the output if requested
+            if args.output:
+                result_uint8 = histogram_matching.img_as_ubyte(matched)
+                histogram_matching.io.imsave(args.output, result_uint8)
+                print(f"Matched image saved to: {args.output}")
+
+        elif args.method == 'custom':
+            # Apply custom histogram matching
+            print("Application de l'appariement d'histogramme avec notre implémentation personnalisée...")
+            matched = histogram_matching.match_histogram_custom(image, reference_hist, bins=args.bins)
+
+            # Visualize the result
+            fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+            axes[0].imshow(image, cmap='gray')
+            axes[0].set_title('Image originale')
+            axes[0].axis('off')
+            axes[1].imshow(matched, cmap='gray')
+            axes[1].set_title('Appariement (custom)')
+            axes[1].axis('off')
+            plt.tight_layout()
+            plt.show()
+
+            # Visualize the histogram of the matched image
+            histogram_matching.visualize_histogram(matched, bins=args.bins, title="Histogramme après appariement (custom)")
+
+            # Save the output if requested
+            if args.output:
+                result_uint8 = histogram_matching.img_as_ubyte(matched)
+                histogram_matching.io.imsave(args.output, result_uint8)
+                print(f"Matched image saved to: {args.output}")
+
+        else:  # both
+            # Apply both methods and compare
+            print("Application de l'appariement d'histogramme avec les deux méthodes...")
+            equalized, matched_custom, matched_builtin = histogram_matching.visualize_matching_results(image, reference_hist, bins=args.bins)
 
     else:
         parser.print_help()
