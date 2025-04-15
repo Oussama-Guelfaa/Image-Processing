@@ -20,13 +20,27 @@ g = h * f + n
 
 où h est la représentation spatiale de la fonction de dommage (appelée Point Spread Function - PSF), et * désigne l'opération de convolution.
 
-Dans le domaine fréquentiel, cette équation devient :
+### Fonction de Transfert Optique (OTF)
+
+La Fonction de Transfert Optique (OTF) est la transformée de Fourier centrée de la PSF. Elle est utilisée pour effectuer des calculs de convolution dans le domaine fréquentiel, ce qui est souvent plus efficace que la convolution dans le domaine spatial, surtout pour les grandes PSF.
+
+La relation entre la PSF et l'OTF est donnée par :
+
+```
+OTF = F{PSF centrée}
+```
+
+où F{} représente la transformée de Fourier.
+
+### Modèle de dommage dans le domaine fréquentiel
+
+Dans le domaine fréquentiel, le modèle de dommage devient :
 
 ```
 G = H·F + N
 ```
 
-où les lettres majuscules sont les transformées de Fourier des termes correspondants.
+où les lettres majuscules sont les transformées de Fourier des termes correspondants, et H est l'OTF.
 
 ### Restauration d'image
 
@@ -38,10 +52,11 @@ L'objectif de la restauration est d'obtenir une estimation f̂ (l'image restaur�
 
 - **Damier (Checkerboard)** : Génère une image en damier, utile pour tester les algorithmes de restauration.
 
-### 2. Génération de PSF (Point Spread Function)
+### 2. Génération de PSF (Point Spread Function) et OTF (Optical Transfer Function)
 
 - **PSF Gaussienne** : Simule un flou isotrope, commun dans de nombreux systèmes d'imagerie.
 - **PSF de flou de mouvement** : Simule le flou causé par le mouvement de la caméra ou de l'objet pendant l'exposition.
+- **Fonction de Transfert Optique (OTF)** : La transformée de Fourier centrée de la PSF, utilisée pour les calculs dans le domaine fréquentiel.
 
 ### 3. Application de dommages
 
@@ -53,6 +68,94 @@ L'objectif de la restauration est d'obtenir une estimation f̂ (l'image restaur�
 
 - **Filtre inverse** : La méthode la plus simple, mais sensible au bruit.
 - **Filtre de Wiener** : Plus robuste au bruit que le filtre inverse.
+
+#### Filtre inverse (cas simple sans bruit)
+
+Dans le cas où il n'y a pas de bruit (n = 0), le modèle de dégradation devient simplement :
+
+```
+g = h * f
+```
+
+Dans le domaine fréquentiel, cela devient :
+
+```
+G = H · F
+```
+
+Où G est la transformée de Fourier de g, H est l'OTF (transformée de Fourier de h), et F est la transformée de Fourier de f.
+
+La restauration par filtre inverse consiste alors à estimer F en divisant G par H :
+
+```
+F = G / H
+```
+
+Et l'image restaurée f est obtenue par transformée de Fourier inverse :
+
+```
+f = FT^(-1){F} = FT^(-1){G / H}
+```
+
+Cependant, cette approche pose un problème lorsque H contient des valeurs nulles ou proches de zéro, car la division devient instable. Pour éviter ce problème, on ajoute une petite constante ε au dénominateur :
+
+```
+F = G / (H + ε)
+```
+
+Où ε est une petite valeur positive (par exemple 0.001).
+
+#### Filtre de Wiener
+
+Le filtre de Wiener est une méthode optimale qui minimise l'erreur quadratique moyenne entre l'image originale et l'image restaurée :
+
+```
+E[|f - f'|^2]
+```
+
+Où E[] dénote l'espérance mathématique, f est l'image originale et f' est l'image restaurée.
+
+Dans le domaine fréquentiel, la solution est donnée par :
+
+```
+F = (H* / (|H|^2 + K)) · G
+```
+
+Où :
+- H* est le conjugué complexe de H
+- |H|^2 est le carré de la magnitude de H
+- K est un paramètre lié au rapport signal/bruit
+
+Le paramètre K peut être fixé arbitrairement ou calculé comme le rapport entre le spectre de puissance du bruit et celui de l'image originale :
+
+```
+K = S_n / S_f
+```
+
+Où S_n est le spectre de puissance du bruit et S_f est le spectre de puissance de l'image originale.
+
+##### Cas sans bruit
+
+Dans le cas où il n'y a pas de bruit, le filtre de Wiener se réduit au filtre inverse :
+
+```
+H_w = { 1/H(u,v)  si H(u,v) ≠ 0
+        0         sinon
+```
+
+##### Cas avec bruit
+
+Dans le cas général avec bruit, le rapport S_n/S_f est remplacé par une constante K qui représente le rapport des spectres de puissance moyens :
+
+```
+K = (1/PQ) ∑∑ S_n(u,v) / (1/PQ) ∑∑ S_f(u,v)
+```
+
+Où PQ est la taille de la matrice (nombre d'éléments).
+
+En pratique, comme nous ne connaissons généralement pas les spectres de puissance exacts, nous utilisons une valeur constante pour K qui peut être ajustée empiriquement :
+- Des valeurs plus petites de K (ex : 0.001) donnent une meilleure restauration des détails, mais sont plus sensibles au bruit.
+- Des valeurs plus grandes de K (ex : 0.1) réduisent l'amplification du bruit, mais peuvent lisser les détails de l'image.
 
 ## Utilisation
 
@@ -103,8 +206,14 @@ psf = damage_modeling.generate_motion_blur_psf(size=64, length=15, angle=45)
 # Visualiser la PSF
 damage_modeling.visualize_psf(psf, title="Point Spread Function")
 
-# Appliquer des dommages à l'image
+# Visualiser la PSF et son OTF
+damage_modeling.visualize_otf(psf, title="PSF et sa Fonction de Transfert Optique")
+
+# Appliquer des dommages à l'image (domaine spatial)
 damaged = damage_modeling.apply_damage(image, psf, noise_level=0.01)
+
+# Appliquer des dommages à l'image (domaine fréquentiel avec OTF)
+damaged_freq = damage_modeling.apply_damage_frequency(image, psf, noise_level=0.01)
 
 # Restaurer l'image avec le filtre inverse
 restored_inverse = damage_modeling.inverse_filter(damaged, psf, epsilon=1e-3)
