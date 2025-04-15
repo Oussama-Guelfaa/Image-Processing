@@ -1,0 +1,2 @@
+[console_scripts]
+imgproc = src.cli:main
