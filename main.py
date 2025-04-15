@@ -11,6 +11,7 @@ Date: 01-04-2025
 import argparse
 import sys
 import os
+import matplotlib.pyplot as plt
 
 def main():
     """Main function that parses command line arguments and runs the appropriate module."""
@@ -55,6 +56,14 @@ def main():
     intensity_parser.add_argument('--gamma', type=float, default=2.0, help='Gamma value for gamma correction')
     intensity_parser.add_argument('--E', type=float, default=4.0, help='E parameter for contrast stretching')
     intensity_parser.add_argument('--output', type=str, default=None, help='Path to save the transformed image')
+
+    # Histogram equalization parser
+    histogram_parser = subparsers.add_parser('histogram', help='Apply histogram equalization to an image')
+    histogram_parser.add_argument('--image', type=str, default=None, help='Path to the image file (default: osteoblaste.jpg)')
+    histogram_parser.add_argument('--method', choices=['builtin', 'custom', 'both'], default='both',
+                                help='Method to use for histogram equalization')
+    histogram_parser.add_argument('--bins', type=int, default=256, help='Number of bins for the histogram')
+    histogram_parser.add_argument('--output', type=str, default=None, help='Path to save the equalized image')
 
     # Parse arguments
     args = parser.parse_args()
@@ -158,6 +167,80 @@ def main():
                 result_uint8 = intensity_transformations.img_as_ubyte(result)
                 intensity_transformations.io.imsave(args.output, result_uint8)
                 print(f"Transformed image saved to: {args.output}")
+
+    elif args.command == 'histogram':
+        image_info = f" on {args.image}" if args.image else ""
+        output_info = f" and saving to {args.output}" if args.output else ""
+        bins_info = f" with {args.bins} bins"
+
+        if args.method == 'builtin':
+            print(f"Applying histogram equalization using built-in method{image_info}{bins_info}{output_info}")
+        elif args.method == 'custom':
+            print(f"Applying histogram equalization using custom method{image_info}{bins_info}{output_info}")
+        else:  # both
+            print(f"Applying histogram equalization using both methods{image_info}{bins_info}{output_info}")
+
+        # Import here to avoid circular imports
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+        # Import the histogram equalization module
+        from src.image_processing import histogram_equalization
+
+        # Load the image
+        image = histogram_equalization.load_image() if args.image is None else \
+                histogram_equalization.img_as_float(histogram_equalization.io.imread(args.image, as_gray=True))
+
+        # Compute and visualize the histogram of the original image
+        histogram_equalization.visualize_histogram(image, bins=args.bins, title="Histogramme de l'image originale")
+
+        # Apply histogram equalization based on the method
+        if args.method == 'builtin':
+            # Apply built-in histogram equalization
+            equalized = histogram_equalization.equalize_histogram_builtin(image)
+            # Visualize the result
+            fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+            axes[0].imshow(image, cmap='gray')
+            axes[0].set_title('Image originale')
+            axes[0].axis('off')
+            axes[1].imshow(equalized, cmap='gray')
+            axes[1].set_title('Égalisation (builtin)')
+            axes[1].axis('off')
+            plt.tight_layout()
+            plt.show()
+            # Visualize the histogram of the equalized image
+            histogram_equalization.visualize_histogram(equalized, bins=args.bins, title="Histogramme après égalisation (builtin)")
+            # Save the output if requested
+            if args.output:
+                result_uint8 = histogram_equalization.img_as_ubyte(equalized)
+                histogram_equalization.io.imsave(args.output, result_uint8)
+                print(f"Equalized image saved to: {args.output}")
+
+        elif args.method == 'custom':
+            # Apply custom histogram equalization
+            equalized = histogram_equalization.equalize_histogram_custom(image, bins=args.bins)
+            # Visualize the result
+            fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+            axes[0].imshow(image, cmap='gray')
+            axes[0].set_title('Image originale')
+            axes[0].axis('off')
+            axes[1].imshow(equalized, cmap='gray')
+            axes[1].set_title('Égalisation (custom)')
+            axes[1].axis('off')
+            plt.tight_layout()
+            plt.show()
+            # Visualize the histogram of the equalized image
+            histogram_equalization.visualize_histogram(equalized, bins=args.bins, title="Histogramme après égalisation (custom)")
+            # Visualize the LUT
+            histogram_equalization.visualize_equalization_lut(image, bins=args.bins)
+            # Save the output if requested
+            if args.output:
+                result_uint8 = histogram_equalization.img_as_ubyte(equalized)
+                histogram_equalization.io.imsave(args.output, result_uint8)
+                print(f"Equalized image saved to: {args.output}")
+
+        else:  # both
+            # Test both methods
+            equalized_builtin, equalized_custom = histogram_equalization.test_histogram_equalization(image)
 
     else:
         parser.print_help()
