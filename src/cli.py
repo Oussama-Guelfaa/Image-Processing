@@ -7,10 +7,7 @@ Author: Oussama GUELFAA
 Date: 01-04-2025
 """
 
-import sys
-import os
 import argparse
-from pathlib import Path
 
 def main():
     """
@@ -103,72 +100,21 @@ Examples:
         parser.print_help()
         return
 
-    # Import the main module
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    import main
+    # Import the core module
+    from src import core
 
     # Execute the command
-    # Map the arguments to match main.py's expected format
+    # Use positional argument for image if provided
+    if args.command in ['intensity', 'histogram', 'matching'] and hasattr(args, 'image_path') and args.image_path and not args.image:
+        args.image = args.image_path
+
+    # Convert CLI arguments to the format expected by core.py
     if args.command == 'intensity':
-        # Use positional argument for image if provided
-        if args.image_path and not args.image:
-            args.image = args.image_path
-
         # Convert --method to --type for intensity command
-        if args.method == 'gamma':
-            sys.argv = ["main.py", "intensity", "--type", "gamma", "--gamma", str(args.gamma)]
-            if args.image:
-                sys.argv.extend(["--image", args.image])
-            if args.output:
-                sys.argv.extend(["--output", args.output])
-        elif args.method == 'contrast':
-            sys.argv = ["main.py", "intensity", "--type", "contrast", "--E", str(args.E)]
-            if args.image:
-                sys.argv.extend(["--image", args.image])
-            if args.output:
-                sys.argv.extend(["--output", args.output])
-        else:  # both
-            sys.argv = ["main.py", "intensity", "--type", "both", "--gamma", str(args.gamma), "--E", str(args.E)]
-            if args.image:
-                sys.argv.extend(["--image", args.image])
-            if args.output:
-                sys.argv.extend(["--output", args.output])
-    elif args.command in ['histogram', 'matching']:
-        # Use positional argument for image if provided
-        if args.image_path and not args.image:
-            args.image = args.image_path
+        args.type = args.method
 
-        # These commands already have the same parameter names
-        sys.argv = ["main.py", args.command]
-        if args.method:
-            sys.argv.extend(["--method", args.method])
-        if args.bins:
-            sys.argv.extend(["--bins", str(args.bins)])
-        if args.image:
-            sys.argv.extend(["--image", args.image])
-        if args.output:
-            sys.argv.extend(["--output", args.output])
-
-        # Add additional parameters for matching command
-        if args.command == 'matching':
-            if hasattr(args, 'peak1'):
-                sys.argv.extend(["--peak1", str(args.peak1)])
-            if hasattr(args, 'peak2'):
-                sys.argv.extend(["--peak2", str(args.peak2)])
-            if hasattr(args, 'sigma1'):
-                sys.argv.extend(["--sigma1", str(args.sigma1)])
-            if hasattr(args, 'sigma2'):
-                sys.argv.extend(["--sigma2", str(args.sigma2)])
-            if hasattr(args, 'weight1'):
-                sys.argv.extend(["--weight1", str(args.weight1)])
-            if hasattr(args, 'weight2'):
-                sys.argv.extend(["--weight2", str(args.weight2)])
-    else:
-        # For other commands, just pass the command name
-        sys.argv = ["main.py", args.command]
-
-    # Run the main function
-    main.main()
+    # Process the command
+    core.process_command(args)
 
 if __name__ == "__main__":
     main()
