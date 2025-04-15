@@ -154,8 +154,29 @@ K = (1/PQ) ∑∑ S_n(u,v) / (1/PQ) ∑∑ S_f(u,v)
 Où PQ est la taille de la matrice (nombre d'éléments).
 
 En pratique, comme nous ne connaissons généralement pas les spectres de puissance exacts, nous utilisons une valeur constante pour K qui peut être ajustée empiriquement :
-- Des valeurs plus petites de K (ex : 0.001) donnent une meilleure restauration des détails, mais sont plus sensibles au bruit.
+- Des valeurs plus petites de K (ex : 0.0001 ou 0.001) donnent une meilleure restauration des détails, mais sont plus sensibles au bruit.
+- Des valeurs moyennes de K (ex : 0.01) offrent un bon compromis entre restauration des détails et réduction du bruit.
 - Des valeurs plus grandes de K (ex : 0.1) réduisent l'amplification du bruit, mais peuvent lisser les détails de l'image.
+
+#### Choix de la valeur optimale de K
+
+Le choix de la valeur optimale de K dépend de plusieurs facteurs :
+
+1. **Niveau de bruit** : Plus le niveau de bruit est élevé, plus K devrait être grand.
+2. **Type de PSF** : Certaines PSF (comme les PSF de mouvement) peuvent nécessiter des valeurs de K différentes.
+3. **Contenu de l'image** : Les images avec beaucoup de détails fins peuvent nécessiter des valeurs de K plus petites.
+
+Si l'on connaît le niveau de bruit et les caractéristiques de l'image originale, on peut calculer une valeur approximative de K comme le rapport entre la puissance moyenne du bruit et la puissance moyenne de l'image :
+
+```
+K ≈ σ²_n / σ²_f
+```
+
+Où σ²_n est la variance du bruit et σ²_f est la variance de l'image originale.
+
+En pratique, il est souvent utile de tester plusieurs valeurs de K et de choisir celle qui donne le meilleur résultat visuel ou qui maximise une métrique de qualité comme le PSNR (Peak Signal-to-Noise Ratio) ou le SSIM (Structural Similarity Index).
+
+Pour plus de détails sur le calcul de la valeur optimale de K, consultez le document [wiener_filter_optimal_k.md](wiener_filter_optimal_k.md).
 
 ## Utilisation
 
@@ -188,6 +209,12 @@ imgproc restore --method wiener --k 0.01 --psf gaussian --sigma 3.0 --image dama
 
 # Comparaison des différentes méthodes
 imgproc restore --method compare --psf gaussian --sigma 3.0 --image damaged.png --output restored.png
+
+# Test de différentes valeurs de K pour le filtre de Wiener
+imgproc restore --method wiener --k 0.0001 --psf gaussian --sigma 3.0 --image damaged.png --output restored_k0.0001.png
+imgproc restore --method wiener --k 0.001 --psf gaussian --sigma 3.0 --image damaged.png --output restored_k0.001.png
+imgproc restore --method wiener --k 0.01 --psf gaussian --sigma 3.0 --image damaged.png --output restored_k0.01.png
+imgproc restore --method wiener --k 0.1 --psf gaussian --sigma 3.0 --image damaged.png --output restored_k0.1.png
 ```
 
 ### Dans un script Python

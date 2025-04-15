@@ -142,6 +142,43 @@ def apply_damage(image, psf, noise_level=0.01):
 
     return damaged
 
+def psf2otf(psf, shape):
+    """
+    Convert a Point Spread Function (PSF) to an Optical Transfer Function (OTF).
+
+    The OTF is the centered Fourier Transform of the PSF. This function handles
+    the zero-padding and centering necessary to properly compute the OTF.
+
+    Args:
+        psf (ndarray): Point Spread Function
+        shape (tuple): Shape of the output OTF
+
+    Returns:
+        ndarray: Optical Transfer Function (complex values)
+    """
+    # Get the shape of the PSF
+    psf_shape = psf.shape
+
+    # Convert shape to numpy array for easier manipulation
+    shape = np.array(shape)
+
+    # Calculate padding
+    pad = shape - psf_shape
+
+    # Pad the PSF with zeros to match the desired output shape
+    h = np.pad(psf, ((0, pad[0]), (0, pad[1])), mode='constant')
+
+    # Calculate the shift needed to center the PSF
+    shift = (np.array(pad) // 2 + 1).astype(int)
+
+    # Roll the padded PSF to center it
+    h_centered = np.roll(h, shift, axis=(0, 1))
+
+    # Compute the 2D FFT of the centered PSF to get the OTF
+    H = np.fft.fft2(h_centered)
+
+    return H
+
 def apply_damage_frequency(image, psf, noise_level=0.01):
     """
     Apply damage to an image using convolution in the frequency domain and additive noise.
@@ -149,7 +186,7 @@ def apply_damage_frequency(image, psf, noise_level=0.01):
     The damage model in the frequency domain is: G = H·F + N
     where:
     - G is the Fourier transform of the damaged image
-    - H is the Fourier transform of the PSF
+    - H is the Fourier transform of the PSF (the OTF)
     - F is the Fourier transform of the original image
     - N is the Fourier transform of the noise
     - · denotes element-wise multiplication
@@ -167,17 +204,12 @@ def apply_damage_frequency(image, psf, noise_level=0.01):
         print("Warning: Image should have values between 0 and 1. Normalizing...")
         image = (image - image.min()) / (image.max() - image.min())
 
-    # Pad the PSF to match the image size
-    psf_padded = np.zeros_like(image)
-    psf_center = psf.shape[0] // 2
-    psf_start_x = image.shape[0] // 2 - psf_center
-    psf_start_y = image.shape[1] // 2 - psf_center
-    psf_padded[psf_start_x:psf_start_x+psf.shape[0], psf_start_y:psf_start_y+psf.shape[1]] = psf
+    # Convert PSF to OTF
+    otf = psf2otf(psf, image.shape)
 
     # Apply convolution in the frequency domain
     F = np.fft.fft2(image)
-    H = np.fft.fft2(psf_padded)
-    G = F * H
+    G = F * otf
 
     # Convert back to spatial domain
     blurred = np.real(np.fft.ifft2(G))
@@ -199,7 +231,7 @@ def inverse_filter(damaged_image, psf, epsilon=1e-3):
     where:
     - F is the Fourier transform of the restored image
     - G is the Fourier transform of the damaged image
-    - H is the Fourier transform of the PSF
+    - H is the Fourier transform of the PSF (the OTF)
 
     A small epsilon is added to avoid division by zero.
 
@@ -211,17 +243,12 @@ def inverse_filter(damaged_image, psf, epsilon=1e-3):
     Returns:
         ndarray: Restored image
     """
-    # Pad the PSF to match the image size
-    psf_padded = np.zeros_like(damaged_image)
-    psf_center = psf.shape[0] // 2
-    psf_start_x = damaged_image.shape[0] // 2 - psf_center
-    psf_start_y = damaged_image.shape[1] // 2 - psf_center
-    psf_padded[psf_start_x:psf_start_x+psf.shape[0], psf_start_y:psf_start_y+psf.shape[1]] = psf
+    # Convert PSF to OTF
+    otf = psf2otf(psf, damaged_image.shape)
 
     # Apply inverse filter in the frequency domain
     G = np.fft.fft2(damaged_image)
-    H = np.fft.fft2(psf_padded)
-    F = G / (H + epsilon)
+    F = G / (otf + epsilon)
 
     # Convert back to spatial domain
     restored = np.real(np.fft.ifft2(F))
@@ -239,7 +266,7 @@ def wiener_filter(damaged_image, psf, K=0.01):
     where:
     - F is the Fourier transform of the restored image
     - G is the Fourier transform of the damaged image
-    - H is the Fourier transform of the PSF
+    - H is the Fourier transform of the PSF (the OTF)
     - H* is the complex conjugate of H
     - |H|² is the squared magnitude of H
     - K is a parameter related to the noise-to-signal ratio
@@ -252,18 +279,13 @@ def wiener_filter(damaged_image, psf, K=0.01):
     Returns:
         ndarray: Restored image
     """
-    # Pad the PSF to match the image size
-    psf_padded = np.zeros_like(damaged_image)
-    psf_center = psf.shape[0] // 2
-    psf_start_x = damaged_image.shape[0] // 2 - psf_center
-    psf_start_y = damaged_image.shape[1] // 2 - psf_center
-    psf_padded[psf_start_x:psf_start_x+psf.shape[0], psf_start_y:psf_start_y+psf.shape[1]] = psf
+    # Convert PSF to OTF
+    otf = psf2otf(psf, damaged_image.shape)
 
     # Apply Wiener filter in the frequency domain
     G = np.fft.fft2(damaged_image)
-    H = np.fft.fft2(psf_padded)
-    H_conj = np.conj(H)
-    H_abs_squared = np.abs(H) ** 2
+    H_conj = np.conj(otf)
+    H_abs_squared = np.abs(otf) ** 2
     F = G * H_conj / (H_abs_squared + K)
 
     # Convert back to spatial domain
@@ -342,6 +364,59 @@ def visualize_psf(psf, title="Point Spread Function"):
     plt.tight_layout()
     plt.show()
 
+def visualize_otf(psf, title="Point Spread Function and OTF"):
+    """
+    Visualize a Point Spread Function (PSF) and its corresponding Optical Transfer Function (OTF).
+
+    Args:
+        psf (ndarray): Point Spread Function
+        title (str): Title for the plot (default: "Point Spread Function and OTF")
+    """
+    # Compute the OTF from the PSF
+    otf = psf2otf(psf, psf.shape)
+
+    # Create a figure with two subplots
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+
+    # Plot the PSF
+    axes[0].imshow(psf, cmap='viridis')
+    axes[0].set_title('Point Spread Function (PSF)')
+    axes[0].axis('off')
+
+    # Plot the magnitude of the OTF (in log scale for better visualization)
+    otf_magnitude = np.abs(otf)
+    axes[1].imshow(np.log1p(np.fft.fftshift(otf_magnitude)), cmap='viridis')
+    axes[1].set_title('Optical Transfer Function (OTF)')
+    axes[1].axis('off')
+
+    plt.suptitle(title)
+    plt.tight_layout()
+    plt.show()
+
+    # Also visualize the OTF in 3D
+    try:
+        from mpl_toolkits.mplot3d import Axes3D
+        from matplotlib import cm
+
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection='3d')
+
+        # Create a meshgrid for the 3D plot
+        x = np.arange(0, psf.shape[0])
+        y = np.arange(0, psf.shape[1])
+        X, Y = np.meshgrid(x, y)
+
+        # Plot the surface
+        surf = ax.plot_surface(X, Y, np.log1p(np.fft.fftshift(otf_magnitude)), cmap=cm.coolwarm,
+                              linewidth=0, antialiased=False)
+
+        ax.set_title('3D Visualization of OTF (Log Scale)')
+        fig.colorbar(surf, shrink=0.5, aspect=5)
+        plt.tight_layout()
+        plt.show()
+    except ImportError:
+        print("3D plotting not available. Install mpl_toolkits for 3D visualization.")
+
 def visualize_restoration_results(original, damaged, restored, titles=None):
     """
     Visualize the original, damaged, and restored images side by side.
@@ -393,8 +468,9 @@ def test_damage_modeling(image=None, psf_type='gaussian', noise_level=0.01):
         psf = generate_motion_blur_psf(size=32, length=15, angle=45)
         psf_title = "Motion Blur PSF"
 
-    # Visualize the PSF
+    # Visualize the PSF and its OTF
     visualize_psf(psf, title=psf_title)
+    visualize_otf(psf, title=f"{psf_title} and its OTF")
 
     # Apply damage to the image
     damaged = apply_damage(image, psf, noise_level=noise_level)
@@ -409,6 +485,15 @@ def test_damage_modeling(image=None, psf_type='gaussian', noise_level=0.01):
     axes[1].axis('off')
     plt.tight_layout()
     plt.show()
+
+    # Compare spatial and frequency domain methods
+    print("\nComparing spatial and frequency domain methods for applying damage...")
+    damaged_spatial = apply_damage(image, psf, noise_level=noise_level)
+    damaged_frequency = apply_damage_frequency(image, psf, noise_level=noise_level)
+
+    # Calculate the difference between the two methods
+    difference = np.abs(damaged_spatial - damaged_frequency)
+    print(f"Maximum difference between methods: {difference.max():.6f}")
 
     return image, psf, damaged
 
