@@ -22,10 +22,15 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  # Using named arguments
   imgproc intensity --method gamma --gamma 0.5 --image path/to/image.jpg
   imgproc histogram --method custom --bins 256 --image path/to/image.jpg
   imgproc matching --method custom --peak1 0.3 --peak2 0.7 --image path/to/image.jpg
-  imgproc segmentation --method kmeans --k 3 --image path/to/image.jpg
+
+  # Using positional arguments for image path
+  imgproc intensity --method gamma --gamma 0.5 path/to/image.jpg
+  imgproc histogram --method custom --bins 256 path/to/image.jpg
+  imgproc matching --method custom --peak1 0.3 --peak2 0.7 path/to/image.jpg
         """
     )
 
@@ -49,6 +54,8 @@ Examples:
                         help='Path to the input image (default: use sample image)')
     intensity_parser.add_argument('--output', type=str, default=None,
                         help='Path to save the output image')
+    intensity_parser.add_argument('image_path', type=str, nargs='?', default=None,
+                        help='Path to the input image (positional argument)')
 
     # Histogram equalization command
     histogram_parser = subparsers.add_parser('histogram', help='Apply histogram equalization')
@@ -60,6 +67,8 @@ Examples:
                         help='Path to the input image (default: use sample image)')
     histogram_parser.add_argument('--output', type=str, default=None,
                         help='Path to save the output image')
+    histogram_parser.add_argument('image_path', type=str, nargs='?', default=None,
+                        help='Path to the input image (positional argument)')
 
     # Histogram matching command
     matching_parser = subparsers.add_parser('matching', help='Apply histogram matching')
@@ -83,6 +92,8 @@ Examples:
                         help='Path to the input image (default: use sample image)')
     matching_parser.add_argument('--output', type=str, default=None,
                         help='Path to save the output image')
+    matching_parser.add_argument('image_path', type=str, nargs='?', default=None,
+                        help='Path to the input image (positional argument)')
 
     # Parse arguments
     args = parser.parse_args()
@@ -99,6 +110,10 @@ Examples:
     # Execute the command
     # Map the arguments to match main.py's expected format
     if args.command == 'intensity':
+        # Use positional argument for image if provided
+        if args.image_path and not args.image:
+            args.image = args.image_path
+
         # Convert --method to --type for intensity command
         if args.method == 'gamma':
             sys.argv = ["main.py", "intensity", "--type", "gamma", "--gamma", str(args.gamma)]
@@ -119,6 +134,10 @@ Examples:
             if args.output:
                 sys.argv.extend(["--output", args.output])
     elif args.command in ['histogram', 'matching']:
+        # Use positional argument for image if provided
+        if args.image_path and not args.image:
+            args.image = args.image_path
+
         # These commands already have the same parameter names
         sys.argv = ["main.py", args.command]
         if args.method:
