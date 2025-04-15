@@ -8,6 +8,7 @@ image_processing_tools.egg-info/requires.txt
 image_processing_tools.egg-info/top_level.txt
 src/__init__.py
 src/cli.py
+src/core.py
 src/image_processing/Convolution.py
 src/image_processing/Transformer_fourier_inverse.py
 src/image_processing/__init__.py

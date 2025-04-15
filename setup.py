@@ -8,7 +8,7 @@ setup(
     description="A collection of image processing tools",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/Image-Processing",
+    url="https://github.com/Oussama-Guelfaa/Image-Processing",
     packages=find_packages(),
     include_package_data=True,
     classifiers=[
