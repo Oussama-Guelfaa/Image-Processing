@@ -1,25 +1,82 @@
 # Image Processing Tools
 
-This project provides tools for image processing and analysis, including intensity transformations, histogram equalization, histogram matching, and more. It is designed to be easy to use and educational.
+This project provides tools for image processing and analysis, including intensity transformations, histogram equalization, histogram matching, filtering, Fourier transforms, image registration, segmentation, and more. It is designed to be easy to use and educational.
 
 ## Project Structure
 
 ```
 Image-Processing/
-├── data/                  # Image files and other data
-├── docs/                  # Documentation
-├── examples/              # Example scripts
-├── latex_documentation/   # LaTeX documentation
-├── src/                   # Source code
-│   ├── image_processing/  # Image processing modules
-│   │   ├── histogram_equalization.py  # Histogram equalization
-│   │   ├── histogram_matching.py      # Histogram matching
-│   │   ├── intensity_transformations.py # Gamma correction and contrast stretching
-│   │   └── ... (other modules)
-│   └── cli.py             # Command-line interface
-├── main.py                # Main entry point
-├── setup.py               # Package installation configuration
-└── README.md              # This file
+├── data/                      # Input data (images, etc.)
+├── docs/                      # Documentation
+│   ├── filtering/             # Documentation on filtering
+│   ├── histogram/             # Documentation on histograms
+│   ├── registration/          # Documentation on image registration
+│   └── segmentation/          # Documentation on segmentation
+├── examples/                  # Usage examples
+├── latex_documentation/       # LaTeX documentation
+├── src/                       # Main source code
+│   ├── image_processing/      # Image processing modules
+│   │   ├── filtering/         # Filters (low-pass, high-pass, Wiener, etc.)
+│   │   ├── fourier/           # Fourier transforms
+│   │   ├── histogram/         # Histogram operations
+│   │   ├── registration/      # Image registration
+│   │   ├── segmentation/      # Image segmentation
+│   │   └── transformations/   # Intensity transformations
+│   └── utils/                 # Utilities
+├── tests/                     # Unit and integration tests
+├── main.py                    # Main entry point
+├── setup.py                   # Package configuration
+└── README.md                  # This file
+```
+
+## Modules
+
+### Filtering
+
+Image filtering operations including low-pass, high-pass, derivative, and Wiener filters.
+
+```python
+from src.image_processing.filtering import apply_lowpass_filter, apply_highpass_filter
+```
+
+### Fourier Transforms
+
+Fourier transform and inverse Fourier transform operations for image processing.
+
+```python
+from src.image_processing.fourier import fourier_transform, inverse_fourier_transform
+```
+
+### Histogram Operations
+
+Histogram equalization, histogram matching, and other histogram-based techniques.
+
+```python
+from src.image_processing.histogram import equalize_histogram, match_histogram
+```
+
+### Image Registration
+
+Image registration techniques including manual point selection, rigid transformation estimation, and ICP algorithm.
+
+```python
+from src.image_processing.registration import estimate_rigid_transform, apply_rigid_transform
+```
+
+### Segmentation
+
+Image segmentation techniques including K-means clustering and other segmentation algorithms.
+
+```python
+from src.image_processing.segmentation import kmeans_segmentation
+```
+
+### Intensity Transformations
+
+Intensity transformation techniques including gamma correction, logarithmic transformation, and others.
+
+```python
+from src.image_processing.transformations import apply_gamma_correction
 ```
 
 ## Installation

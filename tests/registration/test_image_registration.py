@@ -13,7 +13,7 @@ Date: 01-04-2025
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage import io, color
-from src.image_processing.image_registration import (
+from src.image_processing.registration import (
     estimate_rigid_transform,
     apply_rigid_transform,
     icp_registration,
@@ -58,7 +58,7 @@ def main():
     plt.axis('off')
 
     plt.tight_layout()
-    plt.savefig('original_images.png')
+    plt.savefig('output/images/original_images.png')
     plt.show()
 
     # Define control points (as given in the tutorial)
@@ -69,7 +69,7 @@ def main():
     # Visualize control points
     visualize_point_pairs(source_gray, A_points, target_gray, B_points,
                          title="Predefined Control Points")
-    plt.savefig('control_points.png')
+    plt.savefig('output/images/control_points.png')
 
     # 1. Direct rigid transformation estimation
     print("\n1. Testing direct rigid transformation estimation...")
@@ -85,11 +85,11 @@ def main():
     # Visualize result
     visualize_registration_result(source_gray, target_gray, registered_image,
                                  title="Image Registration with Direct Estimation")
-    plt.savefig('direct_registration.png')
+    plt.savefig('output/images/direct_registration.png')
 
     # Create and save superimposed image
     print("Creating superimposed image for direct estimation...")
-    superimposed_direct = superimpose(registered_image, target_gray, 'direct_superimposed.png', show=False)
+    superimposed_direct = superimpose(registered_image, target_gray, 'output/images/direct_superimposed.png', show=False)
 
     # 2. ICP registration with shuffled points
     print("\n2. Testing ICP registration with shuffled points...")
@@ -100,7 +100,7 @@ def main():
     # Visualize shuffled points
     visualize_point_pairs(source_gray, shuffled_A_points, target_gray, B_points,
                          title="Shuffled Control Points")
-    plt.savefig('shuffled_points.png')
+    plt.savefig('output/images/shuffled_points.png')
 
     # Apply ICP
     R_icp, t_icp, transformed_points, error = icp_registration(
@@ -118,11 +118,11 @@ def main():
     # Visualize ICP result
     visualize_registration_result(source_gray, target_gray, registered_image_icp,
                                 title="Image Registration with ICP (Shuffled Points)")
-    plt.savefig('icp_registration.png')
+    plt.savefig('output/images/icp_registration.png')
 
     # Create and save superimposed image for ICP
     print("Creating superimposed image for ICP registration...")
-    superimposed_icp = superimpose(registered_image_icp, target_gray, 'icp_superimposed.png', show=False)
+    superimposed_icp = superimpose(registered_image_icp, target_gray, 'output/images/icp_superimposed.png', show=False)
 
     # 3. Automatic corner detection
     print("\n3. Testing registration with automatic corner detection...")
@@ -137,7 +137,7 @@ def main():
     # Visualize detected corners
     visualize_point_pairs(source_gray, source_corners, target_gray, target_corners,
                          title="Automatically Detected Corners")
-    plt.savefig('automatic_corners.png')
+    plt.savefig('output/images/automatic_corners.png')
 
     # Apply ICP with detected corners
     R_auto, t_auto, transformed_corners, error_auto = icp_registration(
@@ -151,11 +151,11 @@ def main():
     # Visualize result
     visualize_registration_result(source_gray, target_gray, registered_image_auto,
                                 title="Image Registration with Automatic Corner Detection and ICP")
-    plt.savefig('automatic_registration.png')
+    plt.savefig('output/images/automatic_registration.png')
 
     # Create and save superimposed image for automatic corner detection
     print("Creating superimposed image for automatic corner detection...")
-    superimposed_auto = superimpose(registered_image_auto, target_gray, 'automatic_superimposed.png', show=False)
+    superimposed_auto = superimpose(registered_image_auto, target_gray, 'output/images/automatic_superimposed.png', show=False)
 
     print("\nAll tests completed successfully!")
 
