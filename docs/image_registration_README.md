@@ -14,6 +14,7 @@ Ce document explique la théorie et l'implémentation de la méthode ICP (Iterat
    - [Application de la transformation](#application-de-la-transformation)
    - [Algorithme ICP](#algorithme-icp)
    - [Détection automatique des points de contrôle](#détection-automatique-des-points-de-contrôle)
+   - [Sélection manuelle de points correspondants](#sélection-manuelle-de-points-correspondants)
    - [Superposition d'images](#superposition-dimages)
 4. [Résultats](#résultats)
 5. [Conclusion](#conclusion)
@@ -270,6 +271,116 @@ Cette fonction crée une image RGB où :
 - Le canal bleu (B) contient la moyenne des deux images
 
 Cette représentation permet de visualiser facilement les différences entre les deux images et d'évaluer la qualité de l'alignement.
+
+### Sélection manuelle de points correspondants
+
+La sélection manuelle de points correspondants est implémentée à l'aide d'OpenCV. Cette approche permet à l'utilisateur de sélectionner interactivement des paires de points de contrôle sur les deux images :
+
+```python
+def on_mouse(event, x, y, flags, param):
+    """
+    Callback method for detecting click on image.
+    It draws a circle on the global variable image I.
+    """
+    global pts, I
+    if event == cv2.EVENT_LBUTTONUP:
+        pts.append((x, y))
+        cv2.circle(I, (x, y), 2, (0, 0, 255), -1)
+
+
+def cpselect(image, title="Select Points"):
+    """
+    Method for manually selecting the control points.
+    It waits until 'q' key is pressed.
+    """
+    global pts, I
+
+    # Reset points list
+    pts = []
+
+    # Make a copy of the image for display
+    if len(image.shape) == 2:  # Grayscale image
+        I = cv2.cvtColor(image.astype(np.uint8), cv2.COLOR_GRAY2BGR)
+    else:  # Color image
+        I = image.copy()
+
+    cv2.namedWindow(title)
+    cv2.setMouseCallback(title, on_mouse)
+
+    print(f"Select points on '{title}' and press 'q' when finished")
+
+    # Keep looping until the 'q' key is pressed
+    while True:
+        # Display the image and wait for a keypress
+        cv2.imshow(title, I)
+        key = cv2.waitKey(1) & 0xFF
+
+        # If the 'q' key is pressed, break from the loop
+        if key == ord("q"):
+            break
+
+    # Close all open windows
+    cv2.destroyAllWindows()
+
+    return pts
+```
+
+La fonction `rigid_registration` estime la transformation rigide à partir des points correspondants :
+
+```python
+def rigid_registration(data1, data2):
+    """
+    Rigid transformation estimation between n pairs of points.
+    This function returns a rotation R and a translation t.
+    """
+    data1 = np.array(data1)
+    data2 = np.array(data2)
+
+    # Computes barycenters, and recenters the points
+    m1 = np.mean(data1, 0)
+    m2 = np.mean(data2, 0)
+    data1_inv_shifted = data1 - m1
+    data2_inv_shifted = data2 - m2
+
+    # Evaluates SVD
+    K = np.matmul(np.transpose(data2_inv_shifted), data1_inv_shifted)
+    U, S, V = np.linalg.svd(K)
+
+    # Computes Rotation
+    S = np.eye(2)
+    S[1, 1] = np.linalg.det(U) * np.linalg.det(V)
+    R = np.matmul(U, S)
+    R = np.matmul(R, np.transpose(V))
+
+    # Computes Translation
+    t = m2 - np.matmul(R, m1)
+
+    T = np.zeros((2, 3))
+    T[0:2, 0:2] = R
+    T[0:2, 2] = t
+
+    return T
+```
+
+La transformation est ensuite appliquée à l'image source avec OpenCV :
+
+```python
+def applyTransform(points, T):
+    """
+    Apply transform to a list of points.
+    """
+    dataA = np.array(points)
+    src = np.array([dataA])
+    data_dest = cv2.transform(src, T)
+    a, b, c = data_dest.shape
+    data_dest = np.reshape(data_dest, (b, c))
+
+    return data_dest
+
+# Application de la transformation à l'image
+rows, cols = target_image.shape[:2]
+registered_image = cv2.warpAffine(source_image, T, (cols, rows))
+```
 
 ## Résultats
 
