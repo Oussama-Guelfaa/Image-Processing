@@ -89,7 +89,7 @@ def main():
 
     # Create and save superimposed image
     print("Creating superimposed image for direct estimation...")
-    superimposed_direct = superimpose(registered_image, target_gray, 'direct_superimposed.png')
+    superimposed_direct = superimpose(registered_image, target_gray, 'direct_superimposed.png', show=False)
 
     # 2. ICP registration with shuffled points
     print("\n2. Testing ICP registration with shuffled points...")
@@ -122,7 +122,7 @@ def main():
 
     # Create and save superimposed image for ICP
     print("Creating superimposed image for ICP registration...")
-    superimposed_icp = superimpose(registered_image_icp, target_gray, 'icp_superimposed.png')
+    superimposed_icp = superimpose(registered_image_icp, target_gray, 'icp_superimposed.png', show=False)
 
     # 3. Automatic corner detection
     print("\n3. Testing registration with automatic corner detection...")
@@ -155,7 +155,7 @@ def main():
 
     # Create and save superimposed image for automatic corner detection
     print("Creating superimposed image for automatic corner detection...")
-    superimposed_auto = superimpose(registered_image_auto, target_gray, 'automatic_superimposed.png')
+    superimposed_auto = superimpose(registered_image_auto, target_gray, 'automatic_superimposed.png', show=False)
 
     print("\nAll tests completed successfully!")
 

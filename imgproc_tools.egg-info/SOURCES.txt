@@ -10,3 +10,4 @@ imgproc_tools.egg-info/top_level.txt
 src/__init__.py
 src/cli.py
 src/core.py
+src/test_image_registration.py

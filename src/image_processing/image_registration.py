@@ -269,7 +269,7 @@ def visualize_point_pairs(image1, points1, image2, points2, title="Point Pairs")
     plt.show()
 
 
-def superimpose(G1, G2, filename=None):
+def superimpose(G1, G2, filename=None, show=True):
     """
     Superimpose 2 images, supposing they are grayscale images and of same shape.
     For display purposes.
@@ -278,6 +278,7 @@ def superimpose(G1, G2, filename=None):
         G1 (ndarray): First grayscale image
         G2 (ndarray): Second grayscale image
         filename (str): Path to save the superimposed image (default: None)
+        show (bool): Whether to display the image (default: True)
 
     Returns:
         ndarray: Superimposed image as RGB
@@ -292,12 +293,13 @@ def superimpose(G1, G2, filename=None):
     S = 255 * S / np.max(S)
     S = S.astype('uint8')
 
-    plt.figure(figsize=(10, 8))
-    plt.imshow(S)
-    plt.title("Superimposed Images")
-    plt.axis('off')
-    plt.tight_layout()
-    plt.show()
+    if show:
+        plt.figure(figsize=(10, 8))
+        plt.imshow(S)
+        plt.title("Superimposed Images")
+        plt.axis('off')
+        plt.tight_layout()
+        plt.show()
 
     if filename is not None:
         cv2.imwrite(filename, cv2.cvtColor(S, cv2.COLOR_RGB2BGR))
