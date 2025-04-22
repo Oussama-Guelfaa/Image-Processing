@@ -109,6 +109,16 @@ def main():
     checkerboard_parser.add_argument('--square_size', type=int, default=32, help='Size of each square in pixels')
     checkerboard_parser.add_argument('--output', type=str, default=None, help='Path to save the checkerboard image')
 
+    # Image registration parser
+    registration_parser = subparsers.add_parser('registration', help='Register two images')
+    registration_parser.add_argument('--source', type=str, default=None, help='Path to the source image (default: Brain1.bmp)')
+    registration_parser.add_argument('--target', type=str, default=None, help='Path to the target image (default: Brain2.bmp)')
+    registration_parser.add_argument('--method', choices=['manual', 'automatic', 'icp'], default='manual',
+                                  help='Registration method to use')
+    registration_parser.add_argument('--output', type=str, default=None, help='Path to save the registered image')
+    registration_parser.add_argument('--superimpose', action='store_true', help='Generate a superimposed image of the registration result')
+    registration_parser.add_argument('--superimpose_output', type=str, default=None, help='Path to save the superimposed image')
+
     # Parse arguments
     args = parser.parse_args()
 
@@ -590,6 +600,176 @@ def main():
             result_uint8 = damage_modeling.img_as_ubyte(checkerboard)
             damage_modeling.io.imsave(args.output, result_uint8)
             print(f"Checkerboard image saved to: {args.output}")
+
+    elif args.command == 'registration':
+        source_info = f" source: {args.source}" if args.source else ""
+        target_info = f" target: {args.target}" if args.target else ""
+        output_info = f" output: {args.output}" if args.output else ""
+        superimpose_info = " with superimposition" if args.superimpose else ""
+
+        print(f"Running image registration using {args.method} method{source_info}{target_info}{output_info}{superimpose_info}")
+
+        # Import here to avoid circular imports
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+        # Import the registration module
+        from src.image_processing.registration import (
+            estimate_rigid_transform,
+            apply_rigid_transform,
+            icp_registration,
+            detect_corners,
+            visualize_point_pairs,
+            visualize_registration_result,
+            superimpose,
+            select_corresponding_points,
+            rigid_registration
+        )
+        from skimage import io, color
+        import numpy as np
+        import cv2
+
+        # Load images
+        source_path = "data/Brain1.bmp" if args.source is None else args.source
+        target_path = "data/Brain2.bmp" if args.target is None else args.target
+
+        try:
+            source_image = io.imread(source_path)
+            target_image = io.imread(target_path)
+
+            # Convert to grayscale if needed
+            if len(source_image.shape) == 3:
+                source_gray = color.rgb2gray(source_image)
+            else:
+                source_gray = source_image
+
+            if len(target_image.shape) == 3:
+                target_gray = color.rgb2gray(target_image)
+            else:
+                target_gray = target_image
+
+            # Display original images
+            plt.figure(figsize=(12, 6))
+            plt.subplot(1, 2, 1)
+            plt.imshow(source_gray, cmap='gray')
+            plt.title("Source Image")
+            plt.axis('off')
+
+            plt.subplot(1, 2, 2)
+            plt.imshow(target_gray, cmap='gray')
+            plt.title("Target Image")
+            plt.axis('off')
+
+            plt.tight_layout()
+            plt.savefig('output/images/registration_original_images.png')
+            plt.show()
+
+            # Apply registration based on the method
+            if args.method == 'manual':
+                # Manual point selection
+                print("\nSelecting corresponding points...")
+                print("Please select points on both images and press 'q' when finished.")
+
+                source_points, target_points = select_corresponding_points(
+                    source_gray, target_gray,
+                    "Select Points on Source Image",
+                    "Select Points on Target Image"
+                )
+
+                if len(source_points) < 2 or len(target_points) < 2:
+                    print("Error: At least 2 corresponding points are required for registration")
+                    return
+
+                print(f"Selected {len(source_points)} corresponding points")
+
+                # Estimate rigid transformation
+                print("\nEstimating rigid transformation...")
+                T = rigid_registration(source_points, target_points)
+                print("Transformation matrix:")
+                print(T)
+
+                # Apply transformation to source image
+                print("\nApplying transformation to source image...")
+                rows, cols = target_gray.shape
+                registered_image = cv2.warpAffine(source_gray, T, (cols, rows))
+
+            elif args.method == 'automatic':
+                # Automatic corner detection
+                print("\nDetecting corners automatically...")
+                source_corners = detect_corners(source_gray, max_corners=10)
+                target_corners = detect_corners(target_gray, max_corners=10)
+
+                # Visualize detected corners
+                visualize_point_pairs(source_gray, target_gray, source_corners, target_corners,
+                                    title="Automatically Detected Corners")
+                plt.savefig('output/images/registration_auto_corners.png')
+                plt.show()
+
+                # Apply ICP with detected corners
+                print("\nApplying ICP algorithm with detected corners...")
+                R, t, transformed_corners, error = icp_registration(
+                    source_corners, target_corners, max_iterations=50
+                )
+                print(f"ICP completed with error: {error:.6f}")
+
+                # Convert to transformation matrix
+                T = np.zeros((2, 3))
+                T[0:2, 0:2] = R
+                T[0:2, 2] = t
+
+                # Apply transformation to source image
+                print("\nApplying transformation to source image...")
+                rows, cols = target_gray.shape
+                registered_image = cv2.warpAffine(source_gray, T, (cols, rows))
+
+            else:  # icp
+                # Define control points (these would normally be selected by the user)
+                print("\nUsing predefined control points...")
+                source_points = np.array([[100, 100], [150, 100], [100, 150], [150, 150]])
+                target_points = np.array([[110, 110], [160, 105], [105, 160], [155, 155]])  # Slightly shifted
+
+                # Visualize point pairs
+                visualize_point_pairs(source_gray, target_gray, source_points, target_points)
+                plt.savefig('output/images/registration_icp_points.png')
+                plt.show()
+
+                # Apply ICP
+                print("\nApplying ICP algorithm...")
+                R, t, transformed_points, error = icp_registration(
+                    source_points, target_points, max_iterations=20
+                )
+                print(f"ICP completed with error: {error:.6f}")
+
+                # Convert to transformation matrix
+                T = np.zeros((2, 3))
+                T[0:2, 0:2] = R
+                T[0:2, 2] = t
+
+                # Apply transformation to source image
+                print("\nApplying transformation to source image...")
+                rows, cols = target_gray.shape
+                registered_image = cv2.warpAffine(source_gray, T, (cols, rows))
+
+            # Visualize registration result
+            visualize_registration_result(source_gray, target_gray, registered_image,
+                                        title=f"Image Registration with {args.method.capitalize()} Method")
+            plt.savefig(f'output/images/registration_{args.method}_result.png')
+            plt.show()
+
+            # Create and save superimposed image if requested
+            if args.superimpose:
+                print("\nCreating superimposed image...")
+                superimpose_path = args.superimpose_output if args.superimpose_output else f'output/images/registration_{args.method}_superimposed.png'
+                superimposed = superimpose(registered_image, target_gray, superimpose_path, show=True)
+
+            # Save the registered image if requested
+            if args.output:
+                io.imsave(args.output, (registered_image * 255).astype(np.uint8))
+                print(f"Registered image saved to: {args.output}")
+
+            print("\nRegistration completed successfully!")
+
+        except Exception as e:
+            print(f"Error during registration: {str(e)}")
 
     else:
         parser.print_help()
