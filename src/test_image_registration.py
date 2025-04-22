@@ -19,7 +19,8 @@ from src.image_processing.image_registration import (
     icp_registration,
     detect_corners,
     visualize_point_pairs,
-    visualize_registration_result
+    visualize_registration_result,
+    superimpose
 )
 
 
@@ -86,6 +87,10 @@ def main():
                                  title="Image Registration with Direct Estimation")
     plt.savefig('direct_registration.png')
 
+    # Create and save superimposed image
+    print("Creating superimposed image for direct estimation...")
+    superimposed_direct = superimpose(registered_image, target_gray, 'direct_superimposed.png')
+
     # 2. ICP registration with shuffled points
     print("\n2. Testing ICP registration with shuffled points...")
     # Shuffle source points to simulate incorrect pairing
@@ -115,6 +120,10 @@ def main():
                                 title="Image Registration with ICP (Shuffled Points)")
     plt.savefig('icp_registration.png')
 
+    # Create and save superimposed image for ICP
+    print("Creating superimposed image for ICP registration...")
+    superimposed_icp = superimpose(registered_image_icp, target_gray, 'icp_superimposed.png')
+
     # 3. Automatic corner detection
     print("\n3. Testing registration with automatic corner detection...")
     source_corners = detect_corners(source_gray, max_corners=10)
@@ -143,6 +152,10 @@ def main():
     visualize_registration_result(source_gray, target_gray, registered_image_auto,
                                 title="Image Registration with Automatic Corner Detection and ICP")
     plt.savefig('automatic_registration.png')
+
+    # Create and save superimposed image for automatic corner detection
+    print("Creating superimposed image for automatic corner detection...")
+    superimposed_auto = superimpose(registered_image_auto, target_gray, 'automatic_superimposed.png')
 
     print("\nAll tests completed successfully!")
 

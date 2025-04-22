@@ -14,6 +14,7 @@ Ce document explique la théorie et l'implémentation de la méthode ICP (Iterat
    - [Application de la transformation](#application-de-la-transformation)
    - [Algorithme ICP](#algorithme-icp)
    - [Détection automatique des points de contrôle](#détection-automatique-des-points-de-contrôle)
+   - [Superposition d'images](#superposition-dimages)
 4. [Résultats](#résultats)
 5. [Conclusion](#conclusion)
 6. [Références](#références)
@@ -105,27 +106,27 @@ def estimate_rigid_transform(source_points, target_points):
     # 1. Compute the center of each set of points
     source_center = np.mean(source_points, axis=0)
     target_center = np.mean(target_points, axis=0)
-    
+
     # 2. Subtract centers to get centered coordinates
     source_centered = source_points - source_center
     target_centered = target_points - target_center
-    
+
     # 3. Compute the matrix K = target_centered.T @ source_centered
     K = target_centered.T @ source_centered
-    
+
     # 4. Use SVD decomposition
     U, _, Vt = linalg.svd(K)
-    
+
     # 5. Evaluate the rotation matrix
     # Ensure proper rotation matrix (right-handed coordinate system)
     S = np.eye(2)
     S[1, 1] = np.linalg.det(U) * np.linalg.det(Vt.T)
-    
+
     R = U @ S @ Vt
-    
+
     # 6. Evaluate the translation
     t = target_center - R @ source_center
-    
+
     return R, t
 ```
 
@@ -139,11 +140,11 @@ def apply_rigid_transform(image, R, t):
     M = np.zeros((2, 3))
     M[:2, :2] = R
     M[:, 2] = t
-    
+
     # Apply transformation
     rows, cols = image.shape[:2]
     transformed_image = cv2.warpAffine(image, M, (cols, rows))
-    
+
     return transformed_image
 ```
 
@@ -156,29 +157,29 @@ def icp_registration(source_points, target_points, max_iterations=20, tolerance=
     # Initialize
     current_points = source_points.copy()
     prev_error = float('inf')
-    
+
     for i in range(max_iterations):
         # 1. Find nearest neighbors
         matched_source, matched_target = find_nearest_neighbors(current_points, target_points)
-        
+
         # 2. Estimate transformation
         R, t = estimate_rigid_transform(matched_source, matched_target)
-        
+
         # 3. Apply transformation
         current_points = transform_points(current_points, R, t)
-        
+
         # 4. Compute error
         error = np.mean(np.sum((matched_target - current_points) ** 2, axis=1))
-        
+
         # 5. Check convergence
         if abs(prev_error - error) < tolerance:
             break
-            
+
         prev_error = error
-    
+
     # Compute final transformation (from original source to final position)
     final_R, final_t = estimate_rigid_transform(source_points, current_points)
-    
+
     return final_R, final_t, current_points, error
 ```
 
@@ -188,13 +189,13 @@ La fonction `find_nearest_neighbors` utilise un arbre KD (KD-Tree) pour trouver 
 def find_nearest_neighbors(source_points, target_points):
     # Build KD-Tree for target points
     tree = cKDTree(target_points)
-    
+
     # Find nearest neighbors
     distances, indices = tree.query(source_points)
-    
+
     # Get matched points
     matched_target = target_points[indices]
-    
+
     return source_points, matched_target
 ```
 
@@ -209,26 +210,66 @@ def detect_corners(image, max_corners=50, quality_level=0.01, min_distance=10):
         gray = color.rgb2gray(image)
     else:
         gray = image
-    
+
     # Ensure image is in the right format
     gray = (gray * 255).astype(np.uint8)
-    
+
     # Detect corners
     corners = cv2.goodFeaturesToTrack(
-        gray, 
+        gray,
         maxCorners=max_corners,
         qualityLevel=quality_level,
         minDistance=min_distance
     )
-    
+
     # Reshape to (N, 2)
     if corners is not None:
         corners = corners.reshape(-1, 2)
     else:
         corners = np.array([])
-    
+
     return corners
 ```
+
+### Superposition d'images
+
+La fonction `superimpose` permet de visualiser la superposition de deux images en niveaux de gris, ce qui est utile pour évaluer visuellement la qualité de l'enregistrement :
+
+```python
+def superimpose(G1, G2, filename=None):
+    """
+    Superimpose 2 images, supposing they are grayscale images and of same shape.
+    For display purposes.
+    """
+    r, c = G1.shape
+    S = np.zeros((r, c, 3))
+
+    S[:,:,0] = np.maximum(G1-G2, 0) + G1
+    S[:,:,1] = np.maximum(G2-G1, 0) + G2
+    S[:,:,2] = (G1+G2) / 2
+
+    S = 255 * S / np.max(S)
+    S = S.astype('uint8')
+
+    plt.figure(figsize=(10, 8))
+    plt.imshow(S)
+    plt.title("Superimposed Images")
+    plt.axis('off')
+    plt.tight_layout()
+    plt.show()
+
+    if filename is not None:
+        cv2.imwrite(filename, cv2.cvtColor(S, cv2.COLOR_RGB2BGR))
+
+    return S
+```
+
+Cette fonction crée une image RGB où :
+- Le canal rouge (R) contient les parties de la première image qui sont plus intenses que la seconde, plus la première image
+- Le canal vert (G) contient les parties de la seconde image qui sont plus intenses que la première, plus la seconde image
+- Le canal bleu (B) contient la moyenne des deux images
+
+Cette représentation permet de visualiser facilement les différences entre les deux images et d'évaluer la qualité de l'alignement.
 
 ## Résultats
 
@@ -275,5 +316,5 @@ Ces techniques peuvent être étendues à d'autres types d'images et à des tran
 
 ## Auteur
 
-Oussama GUELFAA  
+Oussama GUELFAA
 Date: 01-04-2025

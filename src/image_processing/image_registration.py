@@ -269,7 +269,43 @@ def visualize_point_pairs(image1, points1, image2, points2, title="Point Pairs")
     plt.show()
 
 
-def visualize_registration_result(source_image, target_image, registered_image, title="Registration Result"):
+def superimpose(G1, G2, filename=None):
+    """
+    Superimpose 2 images, supposing they are grayscale images and of same shape.
+    For display purposes.
+
+    Args:
+        G1 (ndarray): First grayscale image
+        G2 (ndarray): Second grayscale image
+        filename (str): Path to save the superimposed image (default: None)
+
+    Returns:
+        ndarray: Superimposed image as RGB
+    """
+    r, c = G1.shape
+    S = np.zeros((r, c, 3))
+
+    S[:,:,0] = np.maximum(G1-G2, 0) + G1
+    S[:,:,1] = np.maximum(G2-G1, 0) + G2
+    S[:,:,2] = (G1+G2) / 2
+
+    S = 255 * S / np.max(S)
+    S = S.astype('uint8')
+
+    plt.figure(figsize=(10, 8))
+    plt.imshow(S)
+    plt.title("Superimposed Images")
+    plt.axis('off')
+    plt.tight_layout()
+    plt.show()
+
+    if filename is not None:
+        cv2.imwrite(filename, cv2.cvtColor(S, cv2.COLOR_RGB2BGR))
+
+    return S
+
+
+def visualize_registration_result(source_image, target_image, registered_image, title="Registration Result", save_superimposed=False, superimposed_filename=None):
     """
     Visualize registration result.
 
@@ -278,6 +314,8 @@ def visualize_registration_result(source_image, target_image, registered_image, 
         target_image (ndarray): Target image
         registered_image (ndarray): Registered image
         title (str): Title for the plot
+        save_superimposed (bool): Whether to save the superimposed image
+        superimposed_filename (str): Path to save the superimposed image
     """
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 
@@ -296,6 +334,10 @@ def visualize_registration_result(source_image, target_image, registered_image, 
     plt.suptitle(title)
     plt.tight_layout()
     plt.show()
+
+    # Create and display superimposed image
+    if save_superimposed:
+        superimpose(registered_image, target_image, superimposed_filename)
 
 
 def manual_point_selection(image, n_points=4, title="Select Points"):
