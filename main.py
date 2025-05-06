@@ -24,6 +24,25 @@ def main():
     fourier_parser = subparsers.add_parser('fourier', help='Run Fourier transform analysis')
     fourier_parser.add_argument('--image', default='data/cornee.png', help='Path to the image file')
 
+    # Denoising parser
+    denoising_parser = subparsers.add_parser('denoising', help='Apply denoising techniques to an image')
+    denoising_parser.add_argument('--image', default='data/jambe.png', help='Path to the image file')
+    denoising_parser.add_argument('--noise', choices=['uniform', 'gaussian', 'salt_pepper', 'exponential'],
+                                default='gaussian', help='Type of noise to add')
+    denoising_parser.add_argument('--method',
+                                choices=['mean', 'median', 'gaussian', 'bilateral', 'nlm', 'adaptive_median', 'fast_adaptive_median', 'all'],
+                                default='all', help='Denoising method to use')
+    denoising_parser.add_argument('--noise_param', type=float, default=0.1,
+                                help='Noise parameter (std for gaussian, a/b for uniform, etc.)')
+    denoising_parser.add_argument('--kernel_size', type=int, default=3,
+                                help='Kernel size for mean and median filters')
+    denoising_parser.add_argument('--max_window_size', type=int, default=7,
+                                help='Maximum window size for adaptive median filter')
+    denoising_parser.add_argument('--sigma', type=float, default=1.0,
+                                help='Sigma for Gaussian filter')
+    denoising_parser.add_argument('--output', type=str, default=None,
+                                help='Path to save the denoised image')
+
     # Filtering parser
     filter_parser = subparsers.add_parser('filter', help='Apply filters to an image')
     filter_parser.add_argument('--image', default='data/cornee.png', help='Path to the image file')
@@ -136,6 +155,258 @@ def main():
         sys.path.append(os.path.dirname(os.path.abspath(__file__)))
         from src.image_processing import filtering_hp_lp
         # The module will run automatically when imported
+
+    elif args.command == 'denoising':
+        noise_info = f" with {args.noise} noise" if args.noise else ""
+        method_info = f" using {args.method} method" if args.method != 'all' else " using all methods"
+        image_info = f" on {args.image}" if args.image else ""
+        output_info = f" and saving to {args.output}" if args.output else ""
+
+        print(f"Applying denoising{noise_info}{method_info}{image_info}{output_info}")
+
+        # Import here to avoid circular imports
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+        # Import the denoising module
+        from src.image_processing.denoising import (
+            generate_uniform_noise,
+            generate_gaussian_noise,
+            generate_salt_pepper_noise,
+            generate_exponential_noise,
+            add_noise_to_image,
+            extract_roi,
+            estimate_noise_parameters,
+            visualize_roi_histogram,
+            apply_mean_filter,
+            apply_median_filter,
+            apply_gaussian_filter,
+            apply_bilateral_filter,
+            apply_nlm_filter,
+            adaptive_median_filter,
+            fast_adaptive_median_filter,
+            compare_denoising_methods
+        )
+        from skimage import io, img_as_float, img_as_ubyte
+
+        # Load the image
+        image = img_as_float(io.imread(args.image, as_gray=True))
+
+        # Set noise parameters based on the noise type
+        noise_params = {}
+        if args.noise == 'gaussian':
+            noise_params = {'mean': 0, 'std': args.noise_param}
+        elif args.noise == 'uniform':
+            noise_params = {'a': -args.noise_param, 'b': args.noise_param}
+        elif args.noise == 'salt_pepper':
+            # For salt and pepper, we use a different approach to control noise level
+            a = args.noise_param / 2
+            b = 1 - args.noise_param / 2
+            noise_params = {'a': a, 'b': b}
+        elif args.noise == 'exponential':
+            noise_params = {'a': 1 / args.noise_param if args.noise_param > 0 else 10}
+
+        # Add noise to the image
+        noisy_image = add_noise_to_image(image, args.noise, **noise_params)
+
+        # Apply denoising based on the method
+        if args.method == 'mean':
+            # Apply mean filter
+            denoised = apply_mean_filter(noisy_image, kernel_size=args.kernel_size)
+
+            # Visualize the result
+            fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+            axes[0].imshow(image, cmap='gray')
+            axes[0].set_title('Original Image')
+            axes[0].axis('off')
+
+            axes[1].imshow(noisy_image, cmap='gray')
+            axes[1].set_title(f'Noisy Image ({args.noise})')
+            axes[1].axis('off')
+
+            axes[2].imshow(denoised, cmap='gray')
+            axes[2].set_title(f'Denoised Image (Mean Filter, k={args.kernel_size})')
+            axes[2].axis('off')
+
+            plt.tight_layout()
+            plt.show()
+
+            # Save the output if requested
+            if args.output:
+                result_uint8 = img_as_ubyte(denoised)
+                io.imsave(args.output, result_uint8)
+                print(f"Denoised image saved to: {args.output}")
+
+        elif args.method == 'median':
+            # Apply median filter
+            denoised = apply_median_filter(noisy_image, kernel_size=args.kernel_size)
+
+            # Visualize the result
+            fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+            axes[0].imshow(image, cmap='gray')
+            axes[0].set_title('Original Image')
+            axes[0].axis('off')
+
+            axes[1].imshow(noisy_image, cmap='gray')
+            axes[1].set_title(f'Noisy Image ({args.noise})')
+            axes[1].axis('off')
+
+            axes[2].imshow(denoised, cmap='gray')
+            axes[2].set_title(f'Denoised Image (Median Filter, k={args.kernel_size})')
+            axes[2].axis('off')
+
+            plt.tight_layout()
+            plt.show()
+
+            # Save the output if requested
+            if args.output:
+                result_uint8 = img_as_ubyte(denoised)
+                io.imsave(args.output, result_uint8)
+                print(f"Denoised image saved to: {args.output}")
+
+        elif args.method == 'gaussian':
+            # Apply Gaussian filter
+            denoised = apply_gaussian_filter(noisy_image, sigma=args.sigma)
+
+            # Visualize the result
+            fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+            axes[0].imshow(image, cmap='gray')
+            axes[0].set_title('Original Image')
+            axes[0].axis('off')
+
+            axes[1].imshow(noisy_image, cmap='gray')
+            axes[1].set_title(f'Noisy Image ({args.noise})')
+            axes[1].axis('off')
+
+            axes[2].imshow(denoised, cmap='gray')
+            axes[2].set_title(f'Denoised Image (Gaussian Filter, sigma={args.sigma})')
+            axes[2].axis('off')
+
+            plt.tight_layout()
+            plt.show()
+
+            # Save the output if requested
+            if args.output:
+                result_uint8 = img_as_ubyte(denoised)
+                io.imsave(args.output, result_uint8)
+                print(f"Denoised image saved to: {args.output}")
+
+        elif args.method == 'bilateral':
+            # Apply bilateral filter
+            denoised = apply_bilateral_filter(noisy_image, sigma_spatial=args.kernel_size, sigma_color=args.sigma)
+
+            # Visualize the result
+            fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+            axes[0].imshow(image, cmap='gray')
+            axes[0].set_title('Original Image')
+            axes[0].axis('off')
+
+            axes[1].imshow(noisy_image, cmap='gray')
+            axes[1].set_title(f'Noisy Image ({args.noise})')
+            axes[1].axis('off')
+
+            axes[2].imshow(denoised, cmap='gray')
+            axes[2].set_title(f'Denoised Image (Bilateral Filter, s={args.kernel_size}, c={args.sigma})')
+            axes[2].axis('off')
+
+            plt.tight_layout()
+            plt.show()
+
+            # Save the output if requested
+            if args.output:
+                result_uint8 = img_as_ubyte(denoised)
+                io.imsave(args.output, result_uint8)
+                print(f"Denoised image saved to: {args.output}")
+
+        elif args.method == 'nlm':
+            # Apply non-local means filter
+            denoised = apply_nlm_filter(noisy_image, patch_size=args.kernel_size, h=args.sigma)
+
+            # Visualize the result
+            fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+            axes[0].imshow(image, cmap='gray')
+            axes[0].set_title('Original Image')
+            axes[0].axis('off')
+
+            axes[1].imshow(noisy_image, cmap='gray')
+            axes[1].set_title(f'Noisy Image ({args.noise})')
+            axes[1].axis('off')
+
+            axes[2].imshow(denoised, cmap='gray')
+            axes[2].set_title(f'Denoised Image (NLM Filter, p={args.kernel_size}, h={args.sigma})')
+            axes[2].axis('off')
+
+            plt.tight_layout()
+            plt.show()
+
+            # Save the output if requested
+            if args.output:
+                result_uint8 = img_as_ubyte(denoised)
+                io.imsave(args.output, result_uint8)
+                print(f"Denoised image saved to: {args.output}")
+
+        elif args.method == 'adaptive_median':
+            # Apply adaptive median filter
+            denoised = adaptive_median_filter(noisy_image, max_window_size=args.max_window_size)
+
+            # Visualize the result
+            fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+            axes[0].imshow(image, cmap='gray')
+            axes[0].set_title('Original Image')
+            axes[0].axis('off')
+
+            axes[1].imshow(noisy_image, cmap='gray')
+            axes[1].set_title(f'Noisy Image ({args.noise})')
+            axes[1].axis('off')
+
+            axes[2].imshow(denoised, cmap='gray')
+            axes[2].set_title(f'Denoised Image (Adaptive Median Filter, max_size={args.max_window_size})')
+            axes[2].axis('off')
+
+            plt.tight_layout()
+            plt.show()
+
+            # Save the output if requested
+            if args.output:
+                result_uint8 = img_as_ubyte(denoised)
+                io.imsave(args.output, result_uint8)
+                print(f"Denoised image saved to: {args.output}")
+
+        elif args.method == 'fast_adaptive_median':
+            # Apply fast adaptive median filter
+            denoised = fast_adaptive_median_filter(noisy_image, max_window_size=args.max_window_size)
+
+            # Visualize the result
+            fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+            axes[0].imshow(image, cmap='gray')
+            axes[0].set_title('Original Image')
+            axes[0].axis('off')
+
+            axes[1].imshow(noisy_image, cmap='gray')
+            axes[1].set_title(f'Noisy Image ({args.noise})')
+            axes[1].axis('off')
+
+            axes[2].imshow(denoised, cmap='gray')
+            axes[2].set_title(f'Denoised Image (Fast Adaptive Median Filter, max_size={args.max_window_size})')
+            axes[2].axis('off')
+
+            plt.tight_layout()
+            plt.show()
+
+            # Save the output if requested
+            if args.output:
+                result_uint8 = img_as_ubyte(denoised)
+                io.imsave(args.output, result_uint8)
+                print(f"Denoised image saved to: {args.output}")
+
+        else:  # all
+            # Compare all denoising methods
+            denoised_images = compare_denoising_methods(image, noisy_image, save_path=args.output)
+
+            # Extract ROI and estimate noise parameters
+            print("\nExtracting ROI and estimating noise parameters...")
+            roi_image, roi_coords = extract_roi(noisy_image, interactive=True)
+            visualize_roi_histogram(roi_image, title=f"Histogram of ROI ({args.noise} noise)")
+            noise_params = estimate_noise_parameters(roi_image, noise_type=args.noise)
 
     elif args.command == 'graph':
         print("Generating graph visualization")

@@ -17,10 +17,15 @@ from . import histogram
 from . import registration
 from . import segmentation
 from . import transformations
+from . import denoising
 
 # Import legacy modules for backward compatibility
-from . import intensity_transformations
-from . import histogram_equalization
-from . import histogram_matching
-from . import damage_modeling
-from . import image_registration
+# Note: These imports are done in a try-except block to avoid circular imports
+try:
+    from . import intensity_transformations
+    from . import histogram_equalization
+    from . import histogram_matching
+    from . import damage_modeling
+    from . import image_registration
+except ImportError:
+    pass  # Ignore circular imports
