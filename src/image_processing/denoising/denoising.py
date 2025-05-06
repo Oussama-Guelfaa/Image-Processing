@@ -23,7 +23,20 @@ from scipy.ndimage import uniform_filter
 import os
 import time
 
-from .noise_generation import load_image, add_noise_to_image
+# Fix imports for running the file directly
+import sys
+import os
+
+# Add the project root to the Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+
+# Use absolute imports when running directly
+if __name__ == "__main__":
+    from src.image_processing.denoising.noise_generation import load_image, add_noise_to_image
+    from src.image_processing.denoising.adaptive_median import adaptive_median_filter, fast_adaptive_median_filter
+else:
+    # Use relative imports when imported as a module
+    from .noise_generation import load_image, add_noise_to_image
 
 def apply_mean_filter(image, kernel_size=3):
     """
@@ -131,8 +144,7 @@ def compare_denoising_methods(image, noisy_image, save_path=None):
     Returns:
         tuple: Denoised images using different methods
     """
-    # Import the adaptive median filter
-    from .adaptive_median import adaptive_median_filter, fast_adaptive_median_filter
+    # No need to import here, we'll use the imports from the top of the file
 
     # Apply different denoising methods
     start_time = time.time()
@@ -295,6 +307,6 @@ def test_denoising(image_path=None, noise_type='gaussian', **noise_params):
 
 if __name__ == "__main__":
     # Test denoising with different noise types
-    test_denoising(image_path="data/jambe.tif", noise_type='gaussian', std=0.1)
-    test_denoising(image_path="data/jambe.tif", noise_type='salt_pepper', a=0.01, b=0.99)
-    test_denoising(image_path="data/jambe.tif", noise_type='exponential', a=10)
+    test_denoising(image_path="data/jambe.png", noise_type='gaussian', std=0.1)
+    test_denoising(image_path="data/jambe.png", noise_type='salt_pepper', a=0.01, b=0.99)
+    test_denoising(image_path="data/jambe.png", noise_type='exponential', a=10)
