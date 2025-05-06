@@ -33,10 +33,14 @@ Image-Processing/
 
 ### Filtering
 
-Image filtering operations including low-pass, high-pass, derivative, and Wiener filters.
+Image filtering operations including low-pass, high-pass, derivative, Wiener filters, and noise removal filters.
 
 ```python
+# Frequency domain filtering
 from src.image_processing.filtering import apply_lowpass_filter, apply_highpass_filter
+
+# Noise filtering
+from src.image_processing.denoising import apply_median_filter, apply_mean_filter, adaptive_median_filter
 ```
 
 ### Fourier Transforms
@@ -126,6 +130,22 @@ imgproc histogram --method custom --bins 256 --image path/to/image.jpg
 imgproc matching --method custom --peak1 0.3 --peak2 0.7 --image path/to/image.jpg
 ```
 
+### Noise Filtering
+
+```bash
+# Add salt and pepper noise to an image
+imgproc noise --type salt_pepper --amount 0.1 --image path/to/image.jpg
+
+# Apply median filter to remove noise
+imgproc denoise --method median --kernel_size 5 --image noisy_image.jpg
+
+# Apply adaptive median filter
+imgproc denoise --method adaptive_median --max_size 7 --image noisy_image.jpg
+
+# Compare different denoising methods
+imgproc denoise --method compare --image noisy_image.jpg
+```
+
 ### Damage Modeling and Image Restoration
 
 ```bash
@@ -162,6 +182,12 @@ You can also run the project using the main.py script without installation:
 ```bash
 # Apply intensity transformations
 python main.py intensity --method gamma --gamma 0.5 --image path/to/image.jpg
+
+# Add noise to an image
+python main.py noise --type salt_pepper --amount 0.1 --image path/to/image.jpg
+
+# Apply denoising
+python main.py denoise --method median --kernel_size 5 --image noisy_image.jpg
 
 # Apply damage to an image
 python main.py damage --psf gaussian --sigma 3.0 --noise 0.01 --image path/to/image.jpg
