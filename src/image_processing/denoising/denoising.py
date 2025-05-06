@@ -16,6 +16,13 @@ Date: 01-05-2025
 
 import numpy as np
 import matplotlib.pyplot as plt
+# Configure matplotlib to work with VS Code's interactive window
+import matplotlib
+# Use the 'inline' backend for VS Code integration
+matplotlib.use('module://matplotlib_inline.backend_inline')
+# Enable interactive mode for better VS Code integration
+plt.ion()
+
 from skimage import io, img_as_float, img_as_ubyte
 from skimage.restoration import denoise_bilateral, denoise_nl_means
 from skimage.filters import gaussian, median
@@ -227,7 +234,9 @@ def compare_denoising_methods(image, noisy_image, save_path=None):
         plt.savefig(save_path, dpi=300)
         print(f"Denoising comparison saved to: {save_path}")
 
-    plt.show()
+    # Display the figure in VS Code's interactive window
+    plt.draw()
+    plt.pause(0.001)  # Small pause to allow the figure to be displayed
 
     # Create a separate figure for adaptive filters and NLM due to their longer processing time
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
@@ -252,7 +261,9 @@ def compare_denoising_methods(image, noisy_image, save_path=None):
         plt.savefig(advanced_path, dpi=300)
         print(f"Advanced denoising results saved to: {advanced_path}")
 
-    plt.show()
+    # Display the figure in VS Code's interactive window
+    plt.draw()
+    plt.pause(0.001)  # Small pause to allow the figure to be displayed
 
     # Print a summary of the results
     print("\nDenoising Results Summary:")
