@@ -8,6 +8,9 @@ Date: 01-04-2025
 """
 
 import argparse
+import sys
+import os
+import matplotlib.pyplot as plt
 
 def main():
     """
@@ -23,6 +26,8 @@ Examples:
   imgproc intensity --method gamma --gamma 0.5 --image path/to/image.jpg
   imgproc histogram --method custom --bins 256 --image path/to/image.jpg
   imgproc matching --method custom --peak1 0.3 --peak2 0.7 --image path/to/image.jpg
+  imgproc denoise --method median --kernel_size 5 --image path/to/image.jpg
+  imgproc registration --method manual --source path/to/source.jpg --target path/to/target.jpg
 
   # Using positional arguments for image path
   imgproc intensity --method gamma --gamma 0.5 path/to/image.jpg
@@ -141,6 +146,65 @@ Examples:
     matching_parser.add_argument('image_path', type=str, nargs='?', default=None,
                         help='Path to the input image (positional argument)')
 
+    # Fourier transform parser
+    fourier_parser = subparsers.add_parser('fourier', help='Run Fourier transform analysis')
+    fourier_parser.add_argument('--image', default='data/cornee.png', help='Path to the image file')
+    fourier_parser.add_argument('--output', type=str, default=None, help='Path to save the output image')
+
+    # Filtering parser
+    filter_parser = subparsers.add_parser('filter', help='Apply filters to an image')
+    filter_parser.add_argument('--image', default='data/cornee.png', help='Path to the image file')
+    filter_parser.add_argument('--type', choices=['lowpass', 'highpass'], default='lowpass',
+                              help='Type of filter to apply')
+    filter_parser.add_argument('--cutoff', type=int, default=30, help='Cutoff frequency for the filter')
+    filter_parser.add_argument('--output', type=str, default=None, help='Path to save the output image')
+
+    # Denoising parser
+    denoising_parser = subparsers.add_parser('denoise', help='Apply denoising techniques to an image')
+    denoising_parser.add_argument('--image', default='data/jambe.tif', help='Path to the image file')
+    denoising_parser.add_argument('--noise', choices=['uniform', 'gaussian', 'salt_pepper', 'exponential'],
+                                default='gaussian', help='Type of noise to add')
+    denoising_parser.add_argument('--method',
+                                choices=['mean', 'median', 'gaussian', 'bilateral', 'nlm', 'adaptive_median', 'fast_adaptive_median', 'all'],
+                                default='all', help='Denoising method to use')
+    denoising_parser.add_argument('--noise_param', type=float, default=0.1,
+                                help='Noise parameter (std for gaussian, a/b for uniform, etc.)')
+    denoising_parser.add_argument('--kernel_size', type=int, default=3,
+                                help='Kernel size for mean and median filters')
+    denoising_parser.add_argument('--max_window_size', type=int, default=7,
+                                help='Maximum window size for adaptive median filter')
+    denoising_parser.add_argument('--sigma', type=float, default=1.0,
+                                help='Sigma for Gaussian filter')
+    denoising_parser.add_argument('--output', type=str, default=None,
+                                help='Path to save the denoised image')
+
+    # Segmentation parser
+    segmentation_parser = subparsers.add_parser('segmentation', help='Run image segmentation')
+    segmentation_parser.add_argument('--method', choices=['threshold', 'kmeans', 'auto', 'otsu', 'all'], default='all',
+                                  help='Segmentation method to use')
+    segmentation_parser.add_argument('--image', type=str, default=None, help='Path to the image file')
+    segmentation_parser.add_argument('--output', type=str, default=None, help='Path to save the segmented image')
+
+    # K-means simulation parser
+    kmeans_parser = subparsers.add_parser('kmeans-sim', help='Run K-means clustering simulation in 2D')
+    kmeans_parser.add_argument('--output', type=str, default=None, help='Path to save the simulation results')
+
+    # Color K-means segmentation parser
+    color_kmeans_parser = subparsers.add_parser('color-kmeans', help='Run color image segmentation using K-means in 3D')
+    color_kmeans_parser.add_argument('--image', type=str, default=None, help='Path to the image file (default: Tv16.png)')
+    color_kmeans_parser.add_argument('--clusters', type=int, default=3, help='Number of clusters for K-means')
+    color_kmeans_parser.add_argument('--output', type=str, default=None, help='Path to save the segmented image')
+
+    # Image registration parser
+    registration_parser = subparsers.add_parser('registration', help='Register two images')
+    registration_parser.add_argument('--source', type=str, default=None, help='Path to the source image (default: Brain1.bmp)')
+    registration_parser.add_argument('--target', type=str, default=None, help='Path to the target image (default: Brain2.bmp)')
+    registration_parser.add_argument('--method', choices=['manual', 'automatic', 'icp'], default='manual',
+                                  help='Registration method to use')
+    registration_parser.add_argument('--output', type=str, default=None, help='Path to save the registered image')
+    registration_parser.add_argument('--superimpose', action='store_true', help='Generate a superimposed image of the registration result')
+    registration_parser.add_argument('--superimpose_output', type=str, default=None, help='Path to save the superimposed image')
+
     # Parse arguments
     args = parser.parse_args()
 
@@ -149,21 +213,17 @@ Examples:
         parser.print_help()
         return
 
-    # Import the core module
-    from src import core
-
-    # Execute the command
-    # Use positional argument for image if provided
-    if args.command in ['intensity', 'histogram', 'matching'] and hasattr(args, 'image_path') and args.image_path and not args.image:
+    # Process the command
+    # First, handle the case where image_path is provided as a positional argument
+    if hasattr(args, 'image_path') and args.image_path and not args.image:
         args.image = args.image_path
 
-    # Convert CLI arguments to the format expected by core.py
+    # Convert CLI arguments to the format expected by the processing functions
     if args.command == 'intensity':
-        # Convert --method to --type for intensity command
         args.type = args.method
-    elif args.command in ['damage', 'restore', 'checkerboard']:
-        # These commands are handled by the damage_modeling module
-        pass
+
+    # Import the core module
+    from src import core
 
     # Process the command
     core.process_command(args)

@@ -416,6 +416,465 @@ def process_checkerboard_command(args):
         damage_modeling.io.imsave(args.output, result_uint8)
         print(f"Checkerboard image saved to: {args.output}")
 
+def process_fourier_command(args):
+    """Process the fourier command."""
+    print(f"Running Fourier transform analysis on {args.image}")
+    # Import the Fourier transform module
+    from src.image_processing.fourier import transformer_fourier
+    # The module will run automatically when imported
+
+def process_filter_command(args):
+    """Process the filter command."""
+    print(f"Applying {args.type} filter to {args.image} with cutoff {args.cutoff}")
+    # Import the filtering module
+    from src.image_processing.filtering import filtering_hp_lp
+    # The module will run automatically when imported
+
+def process_denoising_command(args):
+    """Process the denoising command."""
+    import matplotlib.pyplot as plt
+    from skimage import io, img_as_float, img_as_ubyte
+
+    noise_info = f" with {args.noise} noise" if args.noise else ""
+    method_info = f" using {args.method} method" if args.method != 'all' else " using all methods"
+    image_info = f" on {args.image}" if args.image else ""
+    output_info = f" and saving to {args.output}" if args.output else ""
+
+    print(f"Applying denoising{noise_info}{method_info}{image_info}{output_info}")
+
+    # Import the denoising module
+    from src.image_processing.denoising import (
+        generate_uniform_noise,
+        generate_gaussian_noise,
+        generate_salt_pepper_noise,
+        generate_exponential_noise,
+        add_noise_to_image,
+        extract_roi,
+        estimate_noise_parameters,
+        visualize_roi_histogram,
+        apply_mean_filter,
+        apply_median_filter,
+        apply_gaussian_filter,
+        apply_bilateral_filter,
+        apply_nlm_filter,
+        adaptive_median_filter,
+        fast_adaptive_median_filter,
+        compare_denoising_methods
+    )
+
+    # Load the image
+    image = img_as_float(io.imread(args.image, as_gray=True))
+
+    # Set noise parameters based on the noise type
+    noise_params = {}
+    if args.noise == 'gaussian':
+        noise_params = {'mean': 0, 'std': args.noise_param}
+    elif args.noise == 'uniform':
+        noise_params = {'a': -args.noise_param, 'b': args.noise_param}
+    elif args.noise == 'salt_pepper':
+        # For salt and pepper, we use a different approach to control noise level
+        a = args.noise_param / 2
+        b = 1 - args.noise_param / 2
+        noise_params = {'a': a, 'b': b}
+    elif args.noise == 'exponential':
+        noise_params = {'a': 1 / args.noise_param if args.noise_param > 0 else 10}
+
+    # Add noise to the image
+    noisy_image = add_noise_to_image(image, args.noise, **noise_params)
+
+    # Apply denoising based on the method
+    if args.method == 'mean':
+        # Apply mean filter
+        denoised = apply_mean_filter(noisy_image, kernel_size=args.kernel_size)
+
+        # Visualize the result
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+        axes[0].imshow(image, cmap='gray')
+        axes[0].set_title('Original Image')
+        axes[0].axis('off')
+
+        axes[1].imshow(noisy_image, cmap='gray')
+        axes[1].set_title(f'Noisy Image ({args.noise})')
+        axes[1].axis('off')
+
+        axes[2].imshow(denoised, cmap='gray')
+        axes[2].set_title(f'Denoised Image (Mean Filter, k={args.kernel_size})')
+        axes[2].axis('off')
+
+        plt.tight_layout()
+        plt.show()
+
+        # Save the output if requested
+        if args.output:
+            result_uint8 = img_as_ubyte(denoised)
+            io.imsave(args.output, result_uint8)
+            print(f"Denoised image saved to: {args.output}")
+
+    elif args.method == 'median':
+        # Apply median filter
+        denoised = apply_median_filter(noisy_image, kernel_size=args.kernel_size)
+
+        # Visualize the result
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+        axes[0].imshow(image, cmap='gray')
+        axes[0].set_title('Original Image')
+        axes[0].axis('off')
+
+        axes[1].imshow(noisy_image, cmap='gray')
+        axes[1].set_title(f'Noisy Image ({args.noise})')
+        axes[1].axis('off')
+
+        axes[2].imshow(denoised, cmap='gray')
+        axes[2].set_title(f'Denoised Image (Median Filter, k={args.kernel_size})')
+        axes[2].axis('off')
+
+        plt.tight_layout()
+        plt.show()
+
+        # Save the output if requested
+        if args.output:
+            result_uint8 = img_as_ubyte(denoised)
+            io.imsave(args.output, result_uint8)
+            print(f"Denoised image saved to: {args.output}")
+
+    elif args.method == 'gaussian':
+        # Apply Gaussian filter
+        denoised = apply_gaussian_filter(noisy_image, sigma=args.sigma)
+
+        # Visualize the result
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+        axes[0].imshow(image, cmap='gray')
+        axes[0].set_title('Original Image')
+        axes[0].axis('off')
+
+        axes[1].imshow(noisy_image, cmap='gray')
+        axes[1].set_title(f'Noisy Image ({args.noise})')
+        axes[1].axis('off')
+
+        axes[2].imshow(denoised, cmap='gray')
+        axes[2].set_title(f'Denoised Image (Gaussian Filter, sigma={args.sigma})')
+        axes[2].axis('off')
+
+        plt.tight_layout()
+        plt.show()
+
+        # Save the output if requested
+        if args.output:
+            result_uint8 = img_as_ubyte(denoised)
+            io.imsave(args.output, result_uint8)
+            print(f"Denoised image saved to: {args.output}")
+
+    elif args.method == 'bilateral':
+        # Apply bilateral filter
+        denoised = apply_bilateral_filter(noisy_image, sigma_spatial=args.kernel_size, sigma_color=args.sigma)
+
+        # Visualize the result
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+        axes[0].imshow(image, cmap='gray')
+        axes[0].set_title('Original Image')
+        axes[0].axis('off')
+
+        axes[1].imshow(noisy_image, cmap='gray')
+        axes[1].set_title(f'Noisy Image ({args.noise})')
+        axes[1].axis('off')
+
+        axes[2].imshow(denoised, cmap='gray')
+        axes[2].set_title(f'Denoised Image (Bilateral Filter, s={args.kernel_size}, c={args.sigma})')
+        axes[2].axis('off')
+
+        plt.tight_layout()
+        plt.show()
+
+        # Save the output if requested
+        if args.output:
+            result_uint8 = img_as_ubyte(denoised)
+            io.imsave(args.output, result_uint8)
+            print(f"Denoised image saved to: {args.output}")
+
+    elif args.method == 'nlm':
+        # Apply non-local means filter
+        denoised = apply_nlm_filter(noisy_image, patch_size=args.kernel_size, h=args.sigma)
+
+        # Visualize the result
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+        axes[0].imshow(image, cmap='gray')
+        axes[0].set_title('Original Image')
+        axes[0].axis('off')
+
+        axes[1].imshow(noisy_image, cmap='gray')
+        axes[1].set_title(f'Noisy Image ({args.noise})')
+        axes[1].axis('off')
+
+        axes[2].imshow(denoised, cmap='gray')
+        axes[2].set_title(f'Denoised Image (NLM Filter, p={args.kernel_size}, h={args.sigma})')
+        axes[2].axis('off')
+
+        plt.tight_layout()
+        plt.show()
+
+        # Save the output if requested
+        if args.output:
+            result_uint8 = img_as_ubyte(denoised)
+            io.imsave(args.output, result_uint8)
+            print(f"Denoised image saved to: {args.output}")
+
+    elif args.method == 'adaptive_median':
+        # Apply adaptive median filter
+        denoised = adaptive_median_filter(noisy_image, max_window_size=args.max_window_size)
+
+        # Visualize the result
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+        axes[0].imshow(image, cmap='gray')
+        axes[0].set_title('Original Image')
+        axes[0].axis('off')
+
+        axes[1].imshow(noisy_image, cmap='gray')
+        axes[1].set_title(f'Noisy Image ({args.noise})')
+        axes[1].axis('off')
+
+        axes[2].imshow(denoised, cmap='gray')
+        axes[2].set_title(f'Denoised Image (Adaptive Median Filter, max_size={args.max_window_size})')
+        axes[2].axis('off')
+
+        plt.tight_layout()
+        plt.show()
+
+        # Save the output if requested
+        if args.output:
+            result_uint8 = img_as_ubyte(denoised)
+            io.imsave(args.output, result_uint8)
+            print(f"Denoised image saved to: {args.output}")
+
+    elif args.method == 'fast_adaptive_median':
+        # Apply fast adaptive median filter
+        denoised = fast_adaptive_median_filter(noisy_image, max_window_size=args.max_window_size)
+
+        # Visualize the result
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+        axes[0].imshow(image, cmap='gray')
+        axes[0].set_title('Original Image')
+        axes[0].axis('off')
+
+        axes[1].imshow(noisy_image, cmap='gray')
+        axes[1].set_title(f'Noisy Image ({args.noise})')
+        axes[1].axis('off')
+
+        axes[2].imshow(denoised, cmap='gray')
+        axes[2].set_title(f'Denoised Image (Fast Adaptive Median Filter, max_size={args.max_window_size})')
+        axes[2].axis('off')
+
+        plt.tight_layout()
+        plt.show()
+
+        # Save the output if requested
+        if args.output:
+            result_uint8 = img_as_ubyte(denoised)
+            io.imsave(args.output, result_uint8)
+            print(f"Denoised image saved to: {args.output}")
+
+    else:  # all
+        # Compare all denoising methods
+        denoised_images = compare_denoising_methods(image, noisy_image, save_path=args.output)
+
+        # Extract ROI and estimate noise parameters
+        print("\nExtracting ROI and estimating noise parameters...")
+        roi_image, roi_coords = extract_roi(noisy_image, interactive=True)
+        visualize_roi_histogram(roi_image, title=f"Histogram of ROI ({args.noise} noise)")
+        noise_params = estimate_noise_parameters(roi_image, noise_type=args.noise)
+
+def process_segmentation_command(args):
+    """Process the segmentation command."""
+    print(f"Running image segmentation using {args.method} method")
+    # Import the segmentation module
+    from src.image_processing import segmentation
+    # The module will run automatically when imported
+
+def process_kmeans_sim_command(args):
+    """Process the kmeans-sim command."""
+    print("Running K-means clustering simulation in 2D")
+    # Import the kmeans simulation module
+    from src.image_processing import kmeans_simulation
+    # The module will run automatically when imported
+
+def process_color_kmeans_command(args):
+    """Process the color-kmeans command."""
+    image_info = f" on {args.image}" if args.image else ""
+    output_info = f" and saving to {args.output}" if args.output else ""
+    print(f"Running color image segmentation using K-means with {args.clusters} clusters{image_info}{output_info}")
+    # Import the color kmeans module
+    from src.image_processing import color_kmeans
+    # The module will run automatically when imported
+
+def process_registration_command(args):
+    """Process the registration command."""
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import cv2
+    from skimage import io, color
+
+    source_info = f" source: {args.source}" if args.source else ""
+    target_info = f" target: {args.target}" if args.target else ""
+    output_info = f" output: {args.output}" if args.output else ""
+    superimpose_info = " with superimposition" if args.superimpose else ""
+
+    print(f"Running image registration using {args.method} method{source_info}{target_info}{output_info}{superimpose_info}")
+
+    # Import the registration module
+    from src.image_processing.registration import (
+        estimate_rigid_transform,
+        apply_rigid_transform,
+        icp_registration,
+        detect_corners,
+        visualize_point_pairs,
+        visualize_registration_result,
+        superimpose,
+        select_corresponding_points,
+        rigid_registration
+    )
+
+    # Load images
+    source_path = "data/Brain1.bmp" if args.source is None else args.source
+    target_path = "data/Brain2.bmp" if args.target is None else args.target
+
+    try:
+        source_image = io.imread(source_path)
+        target_image = io.imread(target_path)
+
+        # Convert to grayscale if needed
+        if len(source_image.shape) == 3:
+            source_gray = color.rgb2gray(source_image)
+        else:
+            source_gray = source_image
+
+        if len(target_image.shape) == 3:
+            target_gray = color.rgb2gray(target_image)
+        else:
+            target_gray = target_image
+
+        # Display original images
+        plt.figure(figsize=(12, 6))
+        plt.subplot(1, 2, 1)
+        plt.imshow(source_gray, cmap='gray')
+        plt.title("Source Image")
+        plt.axis('off')
+
+        plt.subplot(1, 2, 2)
+        plt.imshow(target_gray, cmap='gray')
+        plt.title("Target Image")
+        plt.axis('off')
+
+        plt.tight_layout()
+        plt.savefig('output/images/registration_original_images.png')
+        plt.show()
+
+        # Apply registration based on the method
+        if args.method == 'manual':
+            # Manual point selection
+            print("\nSelecting corresponding points...")
+            print("Please select points on both images and press 'q' when finished.")
+
+            source_points, target_points = select_corresponding_points(
+                source_gray, target_gray,
+                "Select Points on Source Image",
+                "Select Points on Target Image"
+            )
+
+            if len(source_points) < 2 or len(target_points) < 2:
+                print("Error: At least 2 corresponding points are required for registration")
+                return
+
+            print(f"Selected {len(source_points)} corresponding points")
+
+            # Estimate rigid transformation
+            print("\nEstimating rigid transformation...")
+            T = rigid_registration(source_points, target_points)
+            print("Transformation matrix:")
+            print(T)
+
+            # Apply transformation to source image
+            print("\nApplying transformation to source image...")
+            rows, cols = target_gray.shape
+            registered_image = cv2.warpAffine(source_gray, T, (cols, rows))
+
+        elif args.method == 'automatic':
+            # Automatic corner detection
+            print("\nDetecting corners automatically...")
+            source_corners = detect_corners(source_gray, max_corners=10)
+            target_corners = detect_corners(target_gray, max_corners=10)
+
+            # Visualize detected corners
+            visualize_point_pairs(source_gray, target_gray, source_corners, target_corners,
+                                title="Automatically Detected Corners")
+            plt.savefig('output/images/registration_auto_corners.png')
+            plt.show()
+
+            # Apply ICP with detected corners
+            print("\nApplying ICP algorithm with detected corners...")
+            R, t, transformed_corners, error = icp_registration(
+                source_corners, target_corners, max_iterations=50
+            )
+            print(f"ICP completed with error: {error:.6f}")
+
+            # Convert to transformation matrix
+            T = np.zeros((2, 3))
+            T[0:2, 0:2] = R
+            T[0:2, 2] = t
+
+            # Apply transformation to source image
+            print("\nApplying transformation to source image...")
+            rows, cols = target_gray.shape
+            registered_image = cv2.warpAffine(source_gray, T, (cols, rows))
+
+        else:  # icp
+            # Define control points (these would normally be selected by the user)
+            print("\nUsing predefined control points...")
+            source_points = np.array([[100, 100], [150, 100], [100, 150], [150, 150]])
+            target_points = np.array([[110, 110], [160, 105], [105, 160], [155, 155]])  # Slightly shifted
+
+            # Visualize point pairs
+            visualize_point_pairs(source_gray, target_gray, source_points, target_points)
+            plt.savefig('output/images/registration_icp_points.png')
+            plt.show()
+
+            # Apply ICP
+            print("\nApplying ICP algorithm...")
+            R, t, transformed_points, error = icp_registration(
+                source_points, target_points, max_iterations=20
+            )
+            print(f"ICP completed with error: {error:.6f}")
+
+            # Convert to transformation matrix
+            T = np.zeros((2, 3))
+            T[0:2, 0:2] = R
+            T[0:2, 2] = t
+
+            # Apply transformation to source image
+            print("\nApplying transformation to source image...")
+            rows, cols = target_gray.shape
+            registered_image = cv2.warpAffine(source_gray, T, (cols, rows))
+
+        # Visualize registration result
+        visualize_registration_result(source_gray, target_gray, registered_image,
+                                    title=f"Image Registration with {args.method.capitalize()} Method")
+        plt.savefig(f'output/images/registration_{args.method}_result.png')
+        plt.show()
+
+        # Create and save superimposed image if requested
+        if args.superimpose:
+            print("\nCreating superimposed image...")
+            superimpose_path = args.superimpose_output if args.superimpose_output else f'output/images/registration_{args.method}_superimposed.png'
+            superimposed = superimpose(registered_image, target_gray, superimpose_path, show=True)
+
+        # Save the registered image if requested
+        if args.output:
+            io.imsave(args.output, (registered_image * 255).astype(np.uint8))
+            print(f"Registered image saved to: {args.output}")
+
+        print("\nRegistration completed successfully!")
+
+    except Exception as e:
+        print(f"Error during registration: {str(e)}")
+
 def process_command(args):
     """Process the command based on the arguments."""
     if args.command == 'intensity':
@@ -430,5 +889,19 @@ def process_command(args):
         process_restore_command(args)
     elif args.command == 'checkerboard':
         process_checkerboard_command(args)
+    elif args.command == 'fourier':
+        process_fourier_command(args)
+    elif args.command == 'filter':
+        process_filter_command(args)
+    elif args.command == 'denoise':
+        process_denoising_command(args)
+    elif args.command == 'segmentation':
+        process_segmentation_command(args)
+    elif args.command == 'kmeans-sim':
+        process_kmeans_sim_command(args)
+    elif args.command == 'color-kmeans':
+        process_color_kmeans_command(args)
+    elif args.command == 'registration':
+        process_registration_command(args)
     else:
         print(f"Unknown command: {args.command}")
