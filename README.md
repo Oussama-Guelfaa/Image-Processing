@@ -8,14 +8,25 @@ This project provides tools for image processing and analysis, including intensi
 Image-Processing/
 ├── data/                      # Input data (images, etc.)
 ├── docs/                      # Documentation
+│   ├── convolution/           # Documentation on convolution operations
+│   ├── damage_modeling/       # Documentation on damage modeling and restoration
+│   ├── denoising/             # Documentation on denoising techniques
 │   ├── filtering/             # Documentation on filtering
+│   ├── fourier/               # Documentation on Fourier transforms
 │   ├── histogram/             # Documentation on histograms
 │   ├── registration/          # Documentation on image registration
-│   └── segmentation/          # Documentation on segmentation
+│   ├── segmentation/          # Documentation on segmentation
+│   └── transformations/       # Documentation on intensity transformations
 ├── examples/                  # Usage examples
+│   └── scripts/               # Example scripts
 ├── latex_documentation/       # LaTeX documentation
+├── output/                    # Output directory for generated images
+│   └── images/                # Generated images
 ├── src/                       # Main source code
 │   ├── image_processing/      # Image processing modules
+│   │   ├── convolution/       # Convolution operations
+│   │   ├── damage_modeling/   # Damage modeling and restoration
+│   │   ├── denoising/         # Denoising techniques
 │   │   ├── filtering/         # Filters (low-pass, high-pass, Wiener, etc.)
 │   │   ├── fourier/           # Fourier transforms
 │   │   ├── histogram/         # Histogram operations
@@ -31,16 +42,36 @@ Image-Processing/
 
 ## Modules
 
-### Filtering
+### Convolution
 
-Image filtering operations including low-pass, high-pass, derivative, Wiener filters, and noise removal filters.
+Convolution operations for image processing, including various kernel types.
 
 ```python
-# Frequency domain filtering
-from src.image_processing.filtering import apply_lowpass_filter, apply_highpass_filter
+from src.image_processing.convolution import convolve, create_kernel
+```
 
-# Noise filtering
+### Damage Modeling and Restoration
+
+Tools for modeling damage to images and restoring them using various techniques.
+
+```python
+from src.image_processing.damage_modeling import generate_gaussian_psf, apply_damage, wiener_filter
+```
+
+### Denoising
+
+Techniques for removing noise from images, including various filtering methods.
+
+```python
 from src.image_processing.denoising import apply_median_filter, apply_mean_filter, adaptive_median_filter
+```
+
+### Filtering
+
+Image filtering operations including low-pass, high-pass, derivative, and Wiener filters.
+
+```python
+from src.image_processing.filtering import apply_lowpass_filter, apply_highpass_filter
 ```
 
 ### Fourier Transforms
