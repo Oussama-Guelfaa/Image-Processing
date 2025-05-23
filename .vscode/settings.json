@@ -1,0 +1,8 @@
+{
+    "python.defaultInterpreterPath": "/opt/anaconda3/envs/image-processing/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    "terminal.integrated.env.osx": {
+        "PATH": "/opt/anaconda3/envs/image-processing/bin:${env:PATH}"
+    }
+}

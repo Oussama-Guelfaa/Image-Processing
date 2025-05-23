@@ -1,18 +1,55 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-Machine Learning module for image processing.
+Machine Learning module for image classification.
 
-This module contains functions and classes for machine learning tasks on images,
-including feature extraction, classification, and neural networks.
+This module provides functionality for feature extraction, classification,
+and visualization of image data using machine learning techniques.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025
 """
 
-from .feature_extraction import extract_region_props
-from .classification import train_classifier, evaluate_classifier
+from .feature_extraction import (
+    extract_features,
+    extract_hu_moments,
+    extract_zernike_moments,
+    extract_geometric_features,
+    extract_hog_features,
+    extract_dataset_features,
+    load_kimia_dataset
+)
+
+from .classification import (
+    train_test_split_dataset,
+    train_classifier,
+    evaluate_classifier,
+    classify_image,
+    cross_validate
+)
+
+from .visualization import (
+    plot_confusion_matrix,
+    plot_feature_importance,
+    visualize_classification_results,
+    visualize_dataset
+)
 
 __all__ = [
-    'extract_region_props',
+    'extract_features',
+    'extract_hu_moments',
+    'extract_zernike_moments',
+    'extract_geometric_features',
+    'extract_hog_features',
+    'extract_dataset_features',
+    'load_kimia_dataset',
+    'train_test_split_dataset',
     'train_classifier',
-    'evaluate_classifier'
+    'evaluate_classifier',
+    'classify_image',
+    'cross_validate',
+    'plot_confusion_matrix',
+    'plot_feature_importance',
+    'visualize_classification_results',
+    'visualize_dataset'
 ]

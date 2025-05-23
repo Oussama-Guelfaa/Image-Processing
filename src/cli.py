@@ -205,6 +205,27 @@ Examples:
     registration_parser.add_argument('--superimpose', action='store_true', help='Generate a superimposed image of the registration result')
     registration_parser.add_argument('--superimpose_output', type=str, default=None, help='Path to save the superimposed image')
 
+    # Machine learning parser
+    ml_parser = subparsers.add_parser('ml', help='Apply machine learning techniques to images')
+    ml_parser.add_argument('--task', choices=['extract', 'train', 'classify', 'evaluate', 'visualize'], default='train',
+                         help='Machine learning task to perform')
+    ml_parser.add_argument('--dataset', type=str, default='data/images_Kimia216',
+                         help='Path to the dataset directory (default: data/images_Kimia216)')
+    ml_parser.add_argument('--classifier', choices=['mlp', 'svm', 'rf', 'ensemble'], default='ensemble',
+                         help='Classifier to use (default: ensemble)')
+    ml_parser.add_argument('--features', choices=['hu', 'zernike', 'geometric', 'hog', 'all'], default='all',
+                         help='Features to extract (default: all)')
+    ml_parser.add_argument('--test_size', type=float, default=0.25,
+                         help='Proportion of the dataset to include in the test split (default: 0.25)')
+    ml_parser.add_argument('--image', type=str, default=None,
+                         help='Path to the image to classify (required for classify task)')
+    ml_parser.add_argument('--model', type=str, default=None,
+                         help='Path to the saved model (required for classify task)')
+    ml_parser.add_argument('--output', type=str, default='output/machine_learning',
+                         help='Path to save the output (default: output/machine_learning)')
+    ml_parser.add_argument('--cross_validate', action='store_true',
+                         help='Perform cross-validation')
+
     # Parse arguments
     args = parser.parse_args()
 

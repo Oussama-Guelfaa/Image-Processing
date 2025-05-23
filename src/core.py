@@ -875,6 +875,335 @@ def process_registration_command(args):
     except Exception as e:
         print(f"Error during registration: {str(e)}")
 
+def process_machine_learning_command(args):
+    """Process the machine learning command."""
+    import os
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from skimage import io
+    from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+    from sklearn.neural_network import MLPClassifier
+    from sklearn.svm import SVC
+    from sklearn.ensemble import RandomForestClassifier
+
+    # Import machine learning modules
+    from src.image_processing.machine_learning import (
+        extract_features,
+        load_kimia_dataset,
+        extract_dataset_features,
+        train_test_split_dataset,
+        train_classifier,
+        evaluate_classifier,
+        classify_image,
+        cross_validate,
+        plot_confusion_matrix,
+        plot_feature_importance,
+        visualize_classification_results,
+        visualize_dataset
+    )
+    from src.image_processing.machine_learning.utils import (
+        create_output_directory,
+        save_model,
+        load_model,
+        save_results,
+        plot_learning_curve,
+        plot_validation_curve
+    )
+
+    # Create output directory
+    os.makedirs(args.output, exist_ok=True)
+
+    # Process based on the task
+    if args.task == 'extract':
+        print(f"Extracting features from dataset: {args.dataset}")
+
+        # Load dataset
+        images, labels, class_names = load_kimia_dataset(args.dataset)
+        print(f"Loaded {len(images)} images from {len(class_names)} classes: {class_names}")
+
+        # Determine feature types
+        if args.features == 'all':
+            feature_types = ['hu', 'zernike', 'geometric']
+        else:
+            feature_types = [args.features]
+
+        # Extract features
+        features = extract_dataset_features(images, feature_types=feature_types)
+        print(f"Extracted {features.shape[1]} features per image")
+
+        # Visualize dataset
+        print("Visualizing dataset...")
+        fig, ax = visualize_dataset(features, labels, class_names=class_names, method='pca')
+        plt.savefig(os.path.join(args.output, 'dataset_pca.png'))
+        plt.show()
+
+        fig, ax = visualize_dataset(features, labels, class_names=class_names, method='tsne')
+        plt.savefig(os.path.join(args.output, 'dataset_tsne.png'))
+        plt.show()
+
+    elif args.task == 'train':
+        print(f"Training classifier on dataset: {args.dataset}")
+
+        # Load dataset
+        images, labels, class_names = load_kimia_dataset(args.dataset)
+        print(f"Loaded {len(images)} images from {len(class_names)} classes: {class_names}")
+
+        # Determine feature types
+        if args.features == 'all':
+            feature_types = ['hu', 'zernike', 'geometric']
+        else:
+            feature_types = [args.features]
+
+        # Extract features
+        print(f"Extracting features: {feature_types}")
+        features = extract_dataset_features(images, feature_types=feature_types)
+        print(f"Extracted {features.shape[1]} features per image")
+
+        # Split dataset
+        X_train, X_test, y_train, y_test = train_test_split_dataset(
+            features, labels, test_size=args.test_size)
+        print(f"Split dataset into {len(X_train)} training and {len(X_test)} testing samples")
+
+        # Train classifier
+        print(f"Training {args.classifier} classifier...")
+        classifier, scaler = train_classifier(X_train, y_train, classifier_type=args.classifier)
+
+        # Evaluate classifier
+        print("Evaluating classifier...")
+        accuracy, y_pred, report, conf_matrix = evaluate_classifier(classifier, X_test, y_test, scaler)
+        print(f"Accuracy: {accuracy:.4f}")
+        print(f"Classification Report:\n{report}")
+
+        # Plot confusion matrix
+        print("Plotting confusion matrix...")
+        fig, ax = plot_confusion_matrix(y_test, y_pred, class_names=class_names)
+        plt.savefig(os.path.join(args.output, 'confusion_matrix.png'))
+        plt.show()
+
+        # Plot feature importance if applicable
+        if args.classifier == 'rf':
+            print("Plotting feature importance...")
+            fig, ax = plot_feature_importance(classifier)
+            plt.savefig(os.path.join(args.output, 'feature_importance.png'))
+            plt.show()
+
+        # Visualize misclassified images
+        print("Visualizing misclassified images...")
+        # Get indices of misclassified images
+        misclassified = np.where(y_test != y_pred)[0]
+        if len(misclassified) > 0:
+            print(f"Found {len(misclassified)} misclassified images")
+            # Create a figure to show misclassifications
+            n_cols = min(5, len(misclassified))
+            n_rows = (len(misclassified) + n_cols - 1) // n_cols
+            fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 3*n_rows))
+            if n_rows == 1 and n_cols == 1:
+                axes = np.array([axes])
+            axes = axes.flatten()
+
+            # For each misclassified image
+            for i, idx in enumerate(misclassified):
+                if i < len(axes):
+                    # Get the true and predicted labels
+                    true_label = y_test[idx]
+                    pred_label = y_pred[idx]
+
+                    # Set the title
+                    axes[i].set_title(f'True: {class_names[true_label]}\nPred: {class_names[pred_label]}')
+                    axes[i].axis('off')
+
+            # Hide unused axes
+            for i in range(len(misclassified), len(axes)):
+                axes[i].axis('off')
+
+            plt.tight_layout()
+            plt.savefig(os.path.join(args.output, 'misclassified_images.png'))
+            plt.show()
+        else:
+            print("No misclassified images found.")
+
+        # Save model
+        print("Saving model...")
+        save_model(classifier, scaler, args.output, 'model.pkl')
+
+        # Save results
+        results = {
+            'Accuracy': accuracy,
+            'Classification Report': report,
+            'Confusion Matrix': conf_matrix
+        }
+        save_results(results, args.output, 'results.txt')
+
+        # Perform cross-validation if requested
+        if args.cross_validate:
+            print("Performing cross-validation...")
+            cv_scores, mean_score, std_score = cross_validate(
+                features, labels, classifier_type=args.classifier)
+            print(f"Cross-validation scores: {cv_scores}")
+            print(f"Mean score: {mean_score:.4f} (±{std_score:.4f})")
+
+            # Plot learning curve
+            print("Plotting learning curve...")
+            if args.classifier == 'mlp':
+                clf = MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=1000, random_state=42)
+            elif args.classifier == 'svm':
+                clf = SVC(gamma='scale', probability=True, random_state=42)
+            else:  # rf
+                clf = RandomForestClassifier(n_estimators=100, random_state=42)
+
+            fig = plot_learning_curve(clf, features, labels, cv=5,
+                                    output_dir=args.output, filename='learning_curve.png')
+            plt.show()
+
+    elif args.task == 'classify':
+        if args.image is None or args.model is None:
+            print("Error: --image and --model are required for classify task")
+            return
+
+        print(f"Classifying image: {args.image}")
+
+        # Load model
+        print(f"Loading model from: {args.model}")
+        classifier, scaler = load_model(args.model)
+
+        # Load image
+        print(f"Loading image: {args.image}")
+        image = io.imread(args.image, as_gray=True)
+
+        # Get the feature types used for training
+        # We need to use the same feature types that were used for training
+        # Use all feature types to match the training
+        feature_types = ['hu', 'zernike', 'geometric']
+
+        # Classify image
+        print(f"Classifying image using {feature_types} features...")
+        label, probability = classify_image(image, classifier, scaler, feature_types)
+
+        # Load dataset to get class names
+        _, _, class_names = load_kimia_dataset(args.dataset)
+
+        # Display result
+        print(f"Predicted class: {class_names[label]}")
+        if probability is not None:
+            print(f"Probability: {probability:.4f}")
+
+        # Display image with prediction
+        plt.figure(figsize=(8, 8))
+        plt.imshow(image, cmap='gray')
+        plt.title(f"Predicted: {class_names[label]}")
+        plt.axis('off')
+        plt.tight_layout()
+        plt.savefig(os.path.join(args.output, 'classified_image.png'))
+        plt.show()
+
+    elif args.task == 'evaluate':
+        if args.model is None:
+            print("Error: --model is required for evaluate task")
+            return
+
+        print(f"Evaluating model: {args.model}")
+
+        # Load model
+        print(f"Loading model from: {args.model}")
+        classifier, scaler = load_model(args.model)
+
+        # Load dataset
+        print(f"Loading dataset: {args.dataset}")
+        images, labels, class_names = load_kimia_dataset(args.dataset)
+
+        # Determine feature types
+        if args.features == 'all':
+            feature_types = ['hu', 'zernike', 'geometric']
+        else:
+            feature_types = [args.features]
+
+        # Extract features
+        print(f"Extracting features: {feature_types}")
+        features = extract_dataset_features(images, feature_types=feature_types)
+
+        # Scale features if scaler is available
+        if scaler is not None:
+            features = scaler.transform(features)
+
+        # Make predictions
+        print("Making predictions...")
+        y_pred = classifier.predict(features)
+
+        # Evaluate
+        accuracy = accuracy_score(labels, y_pred)
+        report = classification_report(labels, y_pred)
+        conf_matrix = confusion_matrix(labels, y_pred)
+
+        print(f"Accuracy: {accuracy:.4f}")
+        print(f"Classification Report:\n{report}")
+
+        # Plot confusion matrix
+        print("Plotting confusion matrix...")
+        fig, ax = plot_confusion_matrix(labels, y_pred, class_names=class_names)
+        plt.savefig(os.path.join(args.output, 'confusion_matrix.png'))
+        plt.show()
+
+        # Visualize misclassified images
+        print("Visualizing misclassified images...")
+        fig = visualize_classification_results(images, labels, y_pred, class_names)
+        if fig is not None:
+            plt.savefig(os.path.join(args.output, 'misclassified_images.png'))
+            plt.show()
+
+        # Save results
+        results = {
+            'Accuracy': accuracy,
+            'Classification Report': report,
+            'Confusion Matrix': conf_matrix
+        }
+        save_results(results, args.output, 'results.txt')
+
+    elif args.task == 'visualize':
+        print(f"Visualizing dataset: {args.dataset}")
+
+        # Load dataset
+        images, labels, class_names = load_kimia_dataset(args.dataset)
+        print(f"Loaded {len(images)} images from {len(class_names)} classes: {class_names}")
+
+        # Determine feature types
+        if args.features == 'all':
+            feature_types = ['hu', 'zernike', 'geometric']
+        else:
+            feature_types = [args.features]
+
+        # Extract features
+        print(f"Extracting features: {feature_types}")
+        features = extract_dataset_features(images, feature_types=feature_types)
+
+        # Visualize dataset
+        print("Visualizing dataset with PCA...")
+        fig, ax = visualize_dataset(features, labels, class_names=class_names, method='pca')
+        plt.savefig(os.path.join(args.output, 'dataset_pca.png'))
+        plt.show()
+
+        print("Visualizing dataset with t-SNE...")
+        fig, ax = visualize_dataset(features, labels, class_names=class_names, method='tsne')
+        plt.savefig(os.path.join(args.output, 'dataset_tsne.png'))
+        plt.show()
+
+        # Display sample images from each class
+        print("Displaying sample images from each class...")
+        n_classes = len(class_names)
+        fig, axes = plt.subplots(1, n_classes, figsize=(15, 5))
+
+        for i, class_name in enumerate(class_names):
+            # Find images of this class
+            class_indices = [j for j, label in enumerate(labels) if label == i]
+            if class_indices:
+                # Display the first image of this class
+                axes[i].imshow(images[class_indices[0]], cmap='gray')
+                axes[i].set_title(class_name)
+                axes[i].axis('off')
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(args.output, 'sample_images.png'))
+        plt.show()
+
 def process_command(args):
     """Process the command based on the arguments."""
     if args.command == 'intensity':
@@ -903,5 +1232,7 @@ def process_command(args):
         process_color_kmeans_command(args)
     elif args.command == 'registration':
         process_registration_command(args)
+    elif args.command == 'ml':
+        process_machine_learning_command(args)
     else:
         print(f"Unknown command: {args.command}")

@@ -18,7 +18,8 @@ from .damage_modeling import (
     apply_damage,
     inverse_filter,
     wiener_filter,
-    load_image
+    load_image,
+    psf2otf
 )
 
 __all__ = [
@@ -29,5 +30,6 @@ __all__ = [
     'apply_damage',
     'inverse_filter',
     'wiener_filter',
-    'load_image'
+    'load_image',
+    'psf2otf'
 ]

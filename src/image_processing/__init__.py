@@ -4,7 +4,7 @@
 Package for image processing functionality.
 This includes intensity transformations, histogram equalization, histogram matching,
 image registration, filtering, Fourier transforms, segmentation, damage modeling,
-convolution operations, machine learning, and other image manipulation techniques.
+convolution operations, and other image manipulation techniques.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025
@@ -20,7 +20,6 @@ from . import transformations
 from . import denoising
 from . import damage_modeling
 from . import convolution
-from . import machine_learning
 
 # Import legacy modules for backward compatibility
 # Note: These imports are done in a try-except block to avoid circular imports

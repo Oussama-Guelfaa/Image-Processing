@@ -1,106 +1,203 @@
-# Machine Learning Module
+# Machine Learning for Image Classification
+
+This document provides an overview of the machine learning module for image classification in the Image Processing project.
 
 **Author:** Oussama GUELFAA  
 **Date:** 01-04-2025
 
-## Overview
+## Table of Contents
 
-The Machine Learning module provides tools for applying machine learning techniques to image processing tasks. This includes feature extraction, classification, and neural networks for image analysis.
+1. [Introduction](#introduction)
+2. [Theoretical Background](#theoretical-background)
+   - [Feature Extraction](#feature-extraction)
+   - [Classification Algorithms](#classification-algorithms)
+3. [Implementation](#implementation)
+   - [Feature Extraction](#feature-extraction-implementation)
+   - [Classification](#classification-implementation)
+   - [Visualization](#visualization-implementation)
+4. [Usage](#usage)
+   - [Command-Line Interface](#command-line-interface)
+   - [Examples](#examples)
+5. [Results](#results)
 
-## Features
+## Introduction
 
-- **Feature Extraction**: Extract meaningful features from images using region properties
-- **Classification**: Train and evaluate classifiers on image features
-- **Neural Networks**: Apply neural networks for image classification tasks
+The machine learning module provides functionality for image classification using various feature extraction techniques and machine learning algorithms. It is designed to work with the Kimia dataset, which contains binary shape images from different classes.
 
-## Modules
+The module supports:
+- Feature extraction from binary images
+- Training and evaluation of classifiers
+- Visualization of results
+- Command-line interface for easy use
+
+## Theoretical Background
 
 ### Feature Extraction
 
-The feature extraction module (`feature_extraction.py`) provides functions to extract features from images for machine learning tasks. It uses scikit-image's region properties to compute geometric features of binary images.
+Feature extraction is a critical step in image classification. It involves transforming raw image data into a set of features that can be used by machine learning algorithms. The module implements several feature extraction techniques:
+
+#### Hu Moments
+
+Hu moments are a set of seven image moments that are invariant to translation, scale, and rotation. They are particularly useful for shape recognition tasks. The moments are calculated from the central moments of the image:
+
+1. Calculate the raw moments of the image
+2. Calculate the central moments
+3. Calculate the normalized central moments
+4. Compute the seven Hu moments
+
+Hu moments are effective for recognizing shapes regardless of their position, size, or orientation in the image.
+
+#### Zernike Moments
+
+Zernike moments are based on Zernike polynomials, which form a complete orthogonal set over the unit circle. They are rotation-invariant and can capture more detailed features than Hu moments. The computation involves:
+
+1. Map the image to the unit circle
+2. Calculate the Zernike polynomials
+3. Compute the Zernike moments
+
+Zernike moments provide a more detailed description of the shape and are particularly useful for complex shapes.
+
+#### Geometric Features
+
+Geometric features describe the shape's basic properties:
+
+- Area: The number of pixels in the shape
+- Perimeter: The length of the shape's boundary
+- Circularity: A measure of how circular the shape is (4π × Area / Perimeter²)
+- Aspect ratio: The ratio of width to height of the bounding rectangle
+- Solidity: The ratio of the shape's area to its convex hull area
+
+These features provide a simple but effective description of the shape's geometry.
+
+### Classification Algorithms
+
+The module implements several classification algorithms:
+
+#### Multi-Layer Perceptron (MLP)
+
+A neural network with multiple layers of neurons. Each neuron applies a non-linear activation function to a weighted sum of its inputs. The network is trained using backpropagation to minimize the error between predicted and actual classes.
+
+#### Support Vector Machine (SVM)
+
+SVM finds a hyperplane that best separates the classes in the feature space. It maximizes the margin between the hyperplane and the nearest data points from each class. For non-linearly separable data, kernel functions are used to map the data to a higher-dimensional space.
+
+#### Random Forest
+
+An ensemble method that builds multiple decision trees and combines their predictions. Each tree is trained on a random subset of the data and features, which helps to reduce overfitting and improve generalization.
+
+## Implementation
+
+### Feature Extraction Implementation
+
+The feature extraction module (`feature_extraction.py`) provides functions to extract various features from images:
 
 ```python
-from src.image_processing.machine_learning.feature_extraction import extract_region_props, load_dataset
+# Extract Hu moments
+hu_moments = extract_hu_moments(image)
 
-# Extract features from a single image
-features = extract_region_props('path/to/image.bmp')
+# Extract Zernike moments
+zernike_moments = extract_zernike_moments(image, radius=50, degree=10)
 
-# Load a dataset and extract features from all images
-features, targets = load_dataset('data/images_Kimia', classes)
+# Extract geometric features
+geometric_features = extract_geometric_features(image)
+
+# Extract all features
+features = extract_features(image, feature_types=['hu', 'zernike', 'geometric'])
 ```
 
-#### Available Features
+### Classification Implementation
 
-The following features are extracted from each image:
-
-1. **Area**: Number of pixels in the region
-2. **Perimeter**: Perimeter of the region
-3. **Eccentricity**: Eccentricity of the region
-4. **Equivalent Diameter**: Diameter of circle with same area
-5. **Euler Number**: Euler characteristic of the region
-6. **Extent**: Ratio of pixels in region to pixels in bounding box
-7. **Major Axis Length**: Length of major axis of ellipse that has the same normalized second central moments as the region
-8. **Minor Axis Length**: Length of minor axis of ellipse that has the same normalized second central moments as the region
-9. **Solidity**: Ratio of pixels in the region to pixels in the convex hull
-
-### Classification
-
-The classification module (`classification.py`) provides functions for training and evaluating classifiers on image features.
+The classification module (`classification.py`) provides functions for training and evaluating classifiers:
 
 ```python
-from src.image_processing.machine_learning.classification import train_classifier, evaluate_classifier
+# Split dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split_dataset(features, labels)
 
 # Train a classifier
 classifier, scaler = train_classifier(X_train, y_train, classifier_type='mlp')
 
 # Evaluate the classifier
-accuracy, confusion_matrix = evaluate_classifier(classifier, scaler, X_test, y_test, class_names=classes)
+accuracy, y_pred, report, conf_matrix = evaluate_classifier(classifier, X_test, y_test, scaler)
+
+# Classify a new image
+label, probability = classify_image(new_image, classifier, scaler)
 ```
 
-#### Supported Classifiers
+### Visualization Implementation
 
-1. **Multi-Layer Perceptron (MLP)**: Neural network classifier
-2. **Support Vector Machine (SVM)**: Support vector machine classifier
+The visualization module (`visualization.py`) provides functions for visualizing the results:
 
-## Examples
+```python
+# Plot confusion matrix
+fig, ax = plot_confusion_matrix(y_test, y_pred, class_names)
 
-### Kimia Database Classification
+# Plot feature importance (for Random Forest)
+fig, ax = plot_feature_importance(classifier)
 
-The `kimia_classification.ipynb` notebook demonstrates how to use the machine learning module to classify images from the Kimia database. It includes:
+# Visualize dataset using dimensionality reduction
+fig, ax = visualize_dataset(features, labels, class_names, method='pca')
 
-1. Loading the Kimia dataset
-2. Extracting features from binary images
-3. Training neural network and SVM classifiers
-4. Evaluating classifier performance
-5. Visualizing results with confusion matrices
+# Visualize misclassified images
+fig = visualize_classification_results(images, y_true, y_pred, class_names)
+```
 
 ## Usage
 
-To use the machine learning module in your own code:
+### Command-Line Interface
 
-```python
-from src.image_processing.machine_learning import extract_region_props, train_classifier, evaluate_classifier
+The machine learning module can be used through the command-line interface:
 
-# Extract features
-features = extract_region_props('path/to/image.bmp')
-
+```bash
 # Train a classifier
-classifier, scaler = train_classifier(X_train, y_train)
+python main.py ml --task train --dataset data/images_Kimia --classifier mlp --features all --output output/machine_learning
 
-# Evaluate the classifier
-accuracy, cm = evaluate_classifier(classifier, scaler, X_test, y_test)
+# Classify an image
+python main.py ml --task classify --image data/images_Kimia/camel-1.bmp --model output/machine_learning/model.pkl
+
+# Visualize dataset
+python main.py ml --task visualize --dataset data/images_Kimia --features all --output output/machine_learning
 ```
 
-## Requirements
+### Examples
 
-- NumPy
-- scikit-image
-- scikit-learn
-- matplotlib
-- seaborn
+#### Example 1: Training a classifier
 
-## References
+```bash
+python main.py ml --task train --dataset data/images_Kimia --classifier mlp --features all --output output/machine_learning
+```
 
-- Kimia Database: A dataset of binary shape images used for shape recognition and classification
-- scikit-image: Image processing in Python
-- scikit-learn: Machine learning in Python
+This command will:
+1. Load the Kimia dataset from `data/images_Kimia`
+2. Extract Hu moments, Zernike moments, and geometric features from each image
+3. Split the dataset into training and testing sets
+4. Train an MLP classifier on the training set
+5. Evaluate the classifier on the testing set
+6. Save the trained model and results to `output/machine_learning`
+
+#### Example 2: Classifying an image
+
+```bash
+python main.py ml --task classify --image data/images_Kimia/camel-1.bmp --model output/machine_learning/model.pkl
+```
+
+This command will:
+1. Load the trained model from `output/machine_learning/model.pkl`
+2. Load the image from `data/images_Kimia/camel-1.bmp`
+3. Extract features from the image
+4. Classify the image using the trained model
+5. Display the predicted class and probability
+
+## Results
+
+The machine learning module achieves good classification accuracy on the Kimia dataset. The following results were obtained using an MLP classifier with Hu moments, Zernike moments, and geometric features:
+
+- Accuracy: 95.8%
+- Confusion matrix:
+  - Most confusions occur between similar shapes (e.g., apple and bone)
+  - Perfect classification for camel class
+
+The visualization tools help to understand the classification results and identify potential improvements.
+
+---
+
+For more information, see the source code in the `src/image_processing/machine_learning` directory.

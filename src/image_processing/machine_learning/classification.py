@@ -1,127 +1,346 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-Classification module for image processing.
+Classification module for image classification.
 
-This module contains functions for training and evaluating classifiers on image features.
+This module provides functions for training and evaluating
+machine learning classifiers on image features.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025
 """
 
 import numpy as np
+from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold
+from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
-import matplotlib.pyplot as plt
-import seaborn as sns
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
-def train_classifier(X_train, y_train, classifier_type='mlp', **kwargs):
+def train_test_split_dataset(features, labels, test_size=0.25, random_state=42):
+    """
+    Split the dataset into training and testing sets.
+
+    Parameters
+    ----------
+    features : ndarray
+        Feature matrix.
+    labels : ndarray
+        Label vector.
+    test_size : float, optional
+        Proportion of the dataset to include in the test split.
+    random_state : int, optional
+        Random seed for reproducibility.
+
+    Returns
+    -------
+    X_train : ndarray
+        Training features.
+    X_test : ndarray
+        Testing features.
+    y_train : ndarray
+        Training labels.
+    y_test : ndarray
+        Testing labels.
+    """
+    return train_test_split(features, labels, test_size=test_size,
+                           random_state=random_state, stratify=labels)
+
+def train_classifier(X_train, y_train, classifier_type='mlp', scale=True, **kwargs):
     """
     Train a classifier on the given data.
-    
+
     Parameters
     ----------
     X_train : ndarray
         Training features.
     y_train : ndarray
-        Training targets.
+        Training labels.
     classifier_type : str, optional
-        Type of classifier to use ('mlp' or 'svm').
+        Type of classifier to use. Options: 'mlp', 'svm', 'rf', 'ensemble'
+    scale : bool, optional
+        Whether to scale the features.
     **kwargs : dict
-        Additional parameters for the classifier.
-        
+        Additional arguments to pass to the classifier.
+
     Returns
     -------
     classifier : object
         Trained classifier.
-    scaler : object
-        Fitted scaler.
+    scaler : object or None
+        Fitted scaler if scale=True, otherwise None.
     """
-    # Normalize the data
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    
-    # Create and train the classifier
-    if classifier_type.lower() == 'mlp':
+    # Scale features if requested
+    if scale:
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+    else:
+        scaler = None
+        X_train_scaled = X_train
+
+    # Create classifier based on type
+    if classifier_type == 'mlp':
         # Default parameters for MLP
-        params = {
-            'hidden_layer_sizes': (100,),
+        mlp_params = {
+            'hidden_layer_sizes': (100, 50),
             'activation': 'relu',
             'solver': 'adam',
+            'alpha': 0.0001,
             'max_iter': 1000,
             'random_state': 42
         }
-        # Update with user parameters
-        params.update(kwargs)
-        classifier = MLPClassifier(**params)
-    elif classifier_type.lower() == 'svm':
+        # Update with user-provided parameters
+        mlp_params.update(kwargs)
+        classifier = MLPClassifier(**mlp_params)
+
+    elif classifier_type == 'svm':
         # Default parameters for SVM
-        params = {
+        svm_params = {
             'C': 1.0,
             'kernel': 'rbf',
             'gamma': 'scale',
+            'probability': True,
             'random_state': 42
         }
-        # Update with user parameters
-        params.update(kwargs)
-        classifier = SVC(**params)
+        # Update with user-provided parameters
+        svm_params.update(kwargs)
+        classifier = SVC(**svm_params)
+
+    elif classifier_type == 'rf':
+        # Default parameters for Random Forest
+        rf_params = {
+            'n_estimators': 100,
+            'max_depth': None,
+            'min_samples_split': 2,
+            'min_samples_leaf': 1,
+            'random_state': 42
+        }
+        # Update with user-provided parameters
+        rf_params.update(kwargs)
+        classifier = RandomForestClassifier(**rf_params)
+
+    elif classifier_type == 'ensemble':
+        # Create a voting ensemble of classifiers
+        from sklearn.ensemble import VotingClassifier
+
+        # Default parameters for ensemble components
+        rf_params = {
+            'n_estimators': 200,
+            'max_depth': None,
+            'random_state': 42,
+            'n_jobs': -1
+        }
+        svm_params = {
+            'C': 10.0,
+            'kernel': 'rbf',
+            'gamma': 'scale',
+            'probability': True,
+            'random_state': 42
+        }
+        mlp_params = {
+            'hidden_layer_sizes': (100, 50),
+            'activation': 'relu',
+            'solver': 'adam',
+            'alpha': 0.0001,
+            'max_iter': 1000,
+            'random_state': 42
+        }
+
+        # Create individual classifiers
+        rf = RandomForestClassifier(**rf_params)
+        svm = SVC(**svm_params)
+        mlp = MLPClassifier(**mlp_params)
+
+        # Create voting classifier
+        classifier = VotingClassifier(
+            estimators=[('rf', rf), ('svm', svm), ('mlp', mlp)],
+            voting='soft'
+        )
+
     else:
-        raise ValueError(f"Unsupported classifier type: {classifier_type}")
-    
+        raise ValueError(f"Unknown classifier type: {classifier_type}")
+
     # Train the classifier
     classifier.fit(X_train_scaled, y_train)
-    
+
     return classifier, scaler
 
-def evaluate_classifier(classifier, scaler, X_test, y_test, class_names=None):
+def evaluate_classifier(classifier, X_test, y_test, scaler=None):
     """
-    Evaluate a classifier on test data.
-    
+    Evaluate a trained classifier on test data.
+
     Parameters
     ----------
     classifier : object
         Trained classifier.
-    scaler : object
-        Fitted scaler.
     X_test : ndarray
         Test features.
     y_test : ndarray
-        Test targets.
-    class_names : list, optional
-        Names of the classes.
-        
+        Test labels.
+    scaler : object or None, optional
+        Fitted scaler to transform test features.
+
     Returns
     -------
     accuracy : float
         Classification accuracy.
-    cm : ndarray
+    y_pred : ndarray
+        Predicted labels.
+    report : str
+        Classification report.
+    conf_matrix : ndarray
         Confusion matrix.
     """
-    # Scale the test data
-    X_test_scaled = scaler.transform(X_test)
-    
+    # Scale features if scaler is provided
+    if scaler is not None:
+        X_test_scaled = scaler.transform(X_test)
+    else:
+        X_test_scaled = X_test
+
     # Make predictions
     y_pred = classifier.predict(X_test_scaled)
-    
+
     # Calculate accuracy
     accuracy = accuracy_score(y_test, y_pred)
-    
-    # Calculate confusion matrix
-    cm = confusion_matrix(y_test, y_pred)
-    
-    # Print classification report
-    print("Classification Report:")
-    print(classification_report(y_test, y_pred, target_names=class_names))
-    
-    # Plot confusion matrix
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
-                xticklabels=class_names if class_names else "auto",
-                yticklabels=class_names if class_names else "auto")
-    plt.xlabel('Predicted')
-    plt.ylabel('True')
-    plt.title(f'Confusion Matrix (Accuracy: {accuracy:.2f})')
-    plt.tight_layout()
-    plt.show()
-    
-    return accuracy, cm
+
+    # Generate classification report
+    report = classification_report(y_test, y_pred)
+
+    # Generate confusion matrix
+    conf_matrix = confusion_matrix(y_test, y_pred)
+
+    return accuracy, y_pred, report, conf_matrix
+
+def cross_validate(features, labels, classifier_type='mlp', n_splits=5, scale=True, **kwargs):
+    """
+    Perform cross-validation on the dataset.
+
+    Parameters
+    ----------
+    features : ndarray
+        Feature matrix.
+    labels : ndarray
+        Label vector.
+    classifier_type : str, optional
+        Type of classifier to use. Options: 'mlp', 'svm', 'rf'
+    n_splits : int, optional
+        Number of folds for cross-validation.
+    scale : bool, optional
+        Whether to scale the features.
+    **kwargs : dict
+        Additional arguments to pass to the classifier.
+
+    Returns
+    -------
+    cv_scores : ndarray
+        Cross-validation scores.
+    mean_score : float
+        Mean cross-validation score.
+    std_score : float
+        Standard deviation of cross-validation scores.
+    """
+    # Scale features if requested
+    if scale:
+        scaler = StandardScaler()
+        features_scaled = scaler.fit_transform(features)
+    else:
+        features_scaled = features
+
+    # Create classifier based on type
+    if classifier_type == 'mlp':
+        # Default parameters for MLP
+        mlp_params = {
+            'hidden_layer_sizes': (100, 50),
+            'activation': 'relu',
+            'solver': 'adam',
+            'alpha': 0.0001,
+            'max_iter': 1000,
+            'random_state': 42
+        }
+        # Update with user-provided parameters
+        mlp_params.update(kwargs)
+        classifier = MLPClassifier(**mlp_params)
+
+    elif classifier_type == 'svm':
+        # Default parameters for SVM
+        svm_params = {
+            'C': 1.0,
+            'kernel': 'rbf',
+            'gamma': 'scale',
+            'probability': True,
+            'random_state': 42
+        }
+        # Update with user-provided parameters
+        svm_params.update(kwargs)
+        classifier = SVC(**svm_params)
+
+    elif classifier_type == 'rf':
+        # Default parameters for Random Forest
+        rf_params = {
+            'n_estimators': 100,
+            'max_depth': None,
+            'min_samples_split': 2,
+            'min_samples_leaf': 1,
+            'random_state': 42
+        }
+        # Update with user-provided parameters
+        rf_params.update(kwargs)
+        classifier = RandomForestClassifier(**rf_params)
+
+    else:
+        raise ValueError(f"Unknown classifier type: {classifier_type}")
+
+    # Perform cross-validation
+    cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+    cv_scores = cross_val_score(classifier, features_scaled, labels, cv=cv, scoring='accuracy')
+
+    # Calculate mean and standard deviation
+    mean_score = np.mean(cv_scores)
+    std_score = np.std(cv_scores)
+
+    return cv_scores, mean_score, std_score
+
+def classify_image(image, classifier, scaler=None, feature_types=None):
+    """
+    Classify a single image using a trained classifier.
+
+    Parameters
+    ----------
+    image : ndarray
+        Input image.
+    classifier : object
+        Trained classifier.
+    scaler : object or None, optional
+        Fitted scaler to transform features.
+    feature_types : list, optional
+        List of feature types to extract.
+
+    Returns
+    -------
+    label : int
+        Predicted class label.
+    probability : float
+        Probability of the predicted class.
+    """
+    from .feature_extraction import extract_features
+
+    # Extract features
+    features = extract_features(image, feature_types)
+    features = features.reshape(1, -1)
+
+    # Scale features if scaler is provided
+    if scaler is not None:
+        features = scaler.transform(features)
+
+    # Make prediction
+    label = classifier.predict(features)[0]
+
+    # Get probability if available
+    if hasattr(classifier, 'predict_proba'):
+        probabilities = classifier.predict_proba(features)[0]
+        probability = probabilities[label]
+    else:
+        probability = None
+
+    return label, probability
