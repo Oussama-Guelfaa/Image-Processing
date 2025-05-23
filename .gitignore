@@ -61,6 +61,10 @@ output/
 !data/**/*.gif
 !data/**/*.bmp
 
+# Exceptions for .gitkeep files
+!output/
+!output/**/.gitkeep
+
 # Documentation build files
 docs/_build/
 docs/api/
