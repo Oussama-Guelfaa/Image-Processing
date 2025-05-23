@@ -18,7 +18,7 @@ import os
 def get_project_root():
     """
     Get the absolute path to the project root directory.
-    
+
     Returns:
         str: The absolute path to the project root directory.
     """
@@ -30,11 +30,24 @@ def get_project_root():
 def get_data_path(filename):
     """
     Get the absolute path to a file in the data directory.
-    
+
     Args:
         filename (str): The name of the file in the data directory.
-        
+
     Returns:
         str: The absolute path to the file.
     """
     return os.path.join(get_project_root(), 'data', filename)
+
+def ensure_output_dir(output_dir):
+    """
+    Ensure the output directory exists, creating it if necessary.
+
+    Args:
+        output_dir (str): Path to the output directory.
+
+    Returns:
+        str: The path to the output directory.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    return output_dir

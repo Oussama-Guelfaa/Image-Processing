@@ -686,9 +686,23 @@ def process_denoising_command(args):
 def process_segmentation_command(args):
     """Process the segmentation command."""
     print(f"Running image segmentation using {args.method} method")
+
     # Import the segmentation module
     from src.image_processing import segmentation
-    # The module will run automatically when imported
+
+    if args.method == 'region_growing':
+        # Import the region growing module
+        from src.image_processing.segmentation.region_growing import main as region_growing_main
+
+        # Set output directory
+        output_dir = args.output if args.output else 'output/segmentation/region_growing'
+
+        # Run region growing segmentation
+        print(f"Running region growing segmentation with threshold={args.threshold}")
+        region_growing_main(args.image, output_dir)
+    else:
+        # For other methods, the module will run automatically when imported
+        pass
 
 def process_kmeans_sim_command(args):
     """Process the kmeans-sim command."""

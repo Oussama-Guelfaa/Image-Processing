@@ -182,10 +182,11 @@ Examples:
 
     # Segmentation parser
     segmentation_parser = subparsers.add_parser('segmentation', help='Run image segmentation')
-    segmentation_parser.add_argument('--method', choices=['threshold', 'kmeans', 'auto', 'otsu', 'all'], default='all',
+    segmentation_parser.add_argument('--method', choices=['threshold', 'kmeans', 'auto', 'otsu', 'region_growing', 'all'], default='all',
                                   help='Segmentation method to use')
     segmentation_parser.add_argument('--image', type=str, default=None, help='Path to the image file')
     segmentation_parser.add_argument('--output', type=str, default=None, help='Path to save the segmented image')
+    segmentation_parser.add_argument('--threshold', type=int, default=20, help='Threshold value for region growing segmentation')
 
     # K-means simulation parser
     kmeans_parser = subparsers.add_parser('kmeans-sim', help='Run K-means clustering simulation in 2D')
