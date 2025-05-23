@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Test script for image registration module.
+Test module for registration.
 
-This script demonstrates the use of the image registration module
-on brain MRI images.
+This module tests the image registration techniques.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025

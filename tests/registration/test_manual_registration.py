@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Test script for manual point selection and registration.
+Test module for registration.
 
-This script demonstrates the manual selection of control points
-for image registration.
+This module tests the image registration techniques.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025

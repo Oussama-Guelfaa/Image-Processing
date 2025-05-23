@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Test script for the adaptive median filter.
+Test module for test_adaptive_median.py.
+
+This module tests the functionality for image processing.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025
