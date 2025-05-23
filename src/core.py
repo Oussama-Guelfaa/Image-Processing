@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Core functionality for the image processing tools.
-This module contains the main logic that was previously in main.py.
+Core
+
+Module for image processing operations.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025
@@ -1204,6 +1205,127 @@ def process_machine_learning_command(args):
         plt.savefig(os.path.join(args.output, 'sample_images.png'))
         plt.show()
 
+def process_multiscale_command(args):
+    """Process the multiscale command."""
+    # Import the multiscale module
+    from src.image_processing.multiscale import (
+        gaussian_pyramid,
+        laplacian_pyramid,
+        reconstruct_from_laplacian_pyramid,
+        reconstruct_from_gaussian_pyramid,
+        calculate_reconstruction_error
+    )
+    from src.image_processing.multiscale.pyramidal_decomposition import (
+        visualize_pyramid,
+        load_image
+    )
+    from skimage import io, img_as_ubyte
+
+    # Use positional argument for image if provided
+    if hasattr(args, 'image_path') and args.image_path and not args.image:
+        args.image = args.image_path
+
+    # Load the image
+    image = load_image(args.image)
+
+    # Display original image
+    plt.figure(figsize=(8, 8))
+    plt.imshow(image, cmap='gray')
+    plt.title('Original Image')
+    plt.axis('off')
+    plt.show()
+
+    # Create Gaussian and Laplacian pyramids
+    print(f"Creating pyramids with {args.levels} levels and sigma={args.sigma}...")
+    gaussian_pyr, laplacian_pyr = laplacian_pyramid(image, levels=args.levels, sigma=args.sigma)
+
+    # Visualize Gaussian pyramid
+    print("Visualizing Gaussian pyramid...")
+    visualize_pyramid(gaussian_pyr, "Gaussian Pyramid")
+
+    # Visualize Laplacian pyramid
+    print("Visualizing Laplacian pyramid...")
+    visualize_pyramid(laplacian_pyr, "Laplacian Pyramid")
+
+    # Reconstruct from Laplacian pyramid (with details)
+    print("Reconstructing image from Laplacian pyramid (with details)...")
+    reconstructed_with_details = reconstruct_from_laplacian_pyramid(laplacian_pyr)
+
+    # Calculate reconstruction error with details
+    error_with_details = calculate_reconstruction_error(image, reconstructed_with_details)
+    print(f"Reconstruction error with details: {error_with_details:.8f}")
+
+    if args.compare:
+        # Reconstruct from Gaussian pyramid (without details)
+        print("Reconstructing image from Gaussian pyramid (without details)...")
+        reconstructed_without_details = reconstruct_from_gaussian_pyramid(gaussian_pyr)
+
+        # Calculate reconstruction error without details
+        error_without_details = calculate_reconstruction_error(image, reconstructed_without_details)
+        print(f"Reconstruction error without details: {error_without_details:.8f}")
+
+        # Display reconstructed images
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+        axes[0].imshow(image, cmap='gray')
+        axes[0].set_title('Original Image')
+        axes[0].axis('off')
+
+        axes[1].imshow(reconstructed_without_details, cmap='gray')
+        axes[1].set_title(f'Reconstructed without Details\nMSE: {error_without_details:.8f}')
+        axes[1].axis('off')
+
+        axes[2].imshow(reconstructed_with_details, cmap='gray')
+        axes[2].set_title(f'Reconstructed with Details\nMSE: {error_with_details:.8f}')
+        axes[2].axis('off')
+
+        plt.tight_layout()
+        plt.show()
+
+        # Save output if requested
+        if args.output:
+            from skimage import img_as_ubyte
+            import os
+
+            # Create output directory if it doesn't exist
+            output_dir = os.path.dirname(args.output)
+            if output_dir and not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+
+            # Save reconstructed images
+            base_name, ext = os.path.splitext(args.output)
+            io.imsave(f"{base_name}_with_details{ext}", img_as_ubyte(reconstructed_with_details))
+            io.imsave(f"{base_name}_without_details{ext}", img_as_ubyte(reconstructed_without_details))
+            print(f"Reconstructed images saved to: {base_name}_with_details{ext} and {base_name}_without_details{ext}")
+    else:
+        # Display reconstructed image with details only
+        fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+
+        axes[0].imshow(image, cmap='gray')
+        axes[0].set_title('Original Image')
+        axes[0].axis('off')
+
+        axes[1].imshow(reconstructed_with_details, cmap='gray')
+        axes[1].set_title(f'Reconstructed with Details\nMSE: {error_with_details:.8f}')
+        axes[1].axis('off')
+
+        plt.tight_layout()
+        plt.show()
+
+        # Save output if requested
+        if args.output:
+            from skimage import img_as_ubyte
+            import os
+
+            # Create output directory if it doesn't exist
+            output_dir = os.path.dirname(args.output)
+            if output_dir and not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+
+            # Save reconstructed image
+            io.imsave(args.output, img_as_ubyte(reconstructed_with_details))
+            print(f"Reconstructed image saved to: {args.output}")
+
 def process_command(args):
     """Process the command based on the arguments."""
     if args.command == 'intensity':
@@ -1234,5 +1356,7 @@ def process_command(args):
         process_registration_command(args)
     elif args.command == 'ml':
         process_machine_learning_command(args)
+    elif args.command == 'multiscale':
+        process_multiscale_command(args)
     else:
         print(f"Unknown command: {args.command}")

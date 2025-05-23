@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Damage modeling module for image processing.
+Damage_modeling
 
-This module provides functions for modeling and simulating damage to images,
-including blurring, noise addition, and restoration.
+Tools for modeling damage to images and restoring them using various techniques.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025

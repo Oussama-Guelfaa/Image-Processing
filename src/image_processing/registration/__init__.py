@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module for image registration.
+Registration
 
-This module contains implementations of image registration techniques
-including manual point selection, rigid transformation estimation,
-and ICP algorithm.
+Image registration techniques including manual point selection and rigid transformation estimation.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025

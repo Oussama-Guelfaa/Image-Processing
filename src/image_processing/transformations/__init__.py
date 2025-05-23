@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module for intensity transformations.
+Transformations
 
-This module contains implementations of intensity transformation techniques
-including gamma correction, logarithmic transformation, and others.
+Intensity transformation techniques including gamma correction and contrast stretching.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025

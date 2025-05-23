@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Machine Learning module for image classification.
+Machine_learning
 
-This module provides functionality for feature extraction, classification,
-and visualization of image data using machine learning techniques.
+Machine learning techniques for image processing and analysis.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025

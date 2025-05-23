@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module for image denoising and noise generation.
+Denoising
 
-This module contains implementations of various noise generation techniques
-and denoising methods for image restoration.
+Techniques for removing noise from images, including various filtering methods.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025

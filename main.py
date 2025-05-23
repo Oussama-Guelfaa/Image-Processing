@@ -20,6 +20,20 @@ def main():
     # Add subparsers for different functionalities
     subparsers = parser.add_subparsers(dest='command', help='Command to run')
 
+    # Multiscale analysis parser
+    multiscale_parser = subparsers.add_parser('multiscale', help='Run multiscale analysis')
+    multiscale_parser.add_argument('--image', type=str, default='data/cerveau.jpg', help='Path to the image file')
+    multiscale_parser.add_argument('--method', choices=['pyramidal', 'scale_space', 'both'], default='both',
+                                  help='Analysis method to use (default: both)')
+    multiscale_parser.add_argument('--levels', type=int, default=4,
+                                  help='Number of levels for pyramidal decomposition (default: 4)')
+    multiscale_parser.add_argument('--sigma', type=float, default=1.0,
+                                  help='Sigma for Gaussian filtering in pyramidal decomposition (default: 1.0)')
+    multiscale_parser.add_argument('--radius', type=int, default=5,
+                                  help='Radius of the structuring element (disk) for scale-space decomposition (default: 5)')
+    multiscale_parser.add_argument('--kb-iterations', type=int, default=3,
+                                  help='Number of iterations for Kramer-Bruckner filter (default: 3)')
+
     # Fourier transform parser
     fourier_parser = subparsers.add_parser('fourier', help='Run Fourier transform analysis')
     fourier_parser.add_argument('--image', default='data/cornee.png', help='Path to the image file')
@@ -871,6 +885,28 @@ def main():
             result_uint8 = damage_modeling.img_as_ubyte(checkerboard)
             damage_modeling.io.imsave(args.output, result_uint8)
             print(f"Checkerboard image saved to: {args.output}")
+
+    elif args.command == 'multiscale':
+        print(f"Running multiscale analysis on {args.image}")
+
+        # Import here to avoid circular imports
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+        # Import the multiscale module
+        from src.image_processing.multiscale import multiscale_cli
+
+        # Create a new args object with the required attributes
+        multiscale_args = argparse.Namespace()
+        multiscale_args.image = args.image
+        multiscale_args.method = args.method
+        multiscale_args.levels = args.levels
+        multiscale_args.sigma = args.sigma
+        multiscale_args.radius = args.radius
+        multiscale_args.kb_iterations = args.kb_iterations
+        multiscale_args.output_dir = 'output/multiscale'
+
+        # Run the multiscale analysis
+        multiscale_cli.main(multiscale_args)
 
     elif args.command == 'registration':
         source_info = f" source: {args.source}" if args.source else ""

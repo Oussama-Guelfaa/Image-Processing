@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Feature extraction module for image classification.
+Machine_learning
 
-This module provides functions to extract various features from images
-that can be used for machine learning classification tasks.
+Machine learning techniques for image processing and analysis.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025
@@ -19,6 +18,7 @@ from skimage.feature import hog
 from skimage.measure import moments, moments_hu, moments_normalized
 import mahotas as mh
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 def load_kimia_dataset(data_dir='data/images_Kimia', max_images_per_class=None):
     """
@@ -286,3 +286,64 @@ def extract_dataset_features(images, feature_types=None, verbose=True):
         features.append(image_features)
 
     return np.array(features)
+
+def main():
+    """
+    Main function to demonstrate feature extraction capabilities.
+    This function can be run directly to test the feature extraction module.
+    """
+    # Create output directory
+    os.makedirs('output/machine_learning', exist_ok=True)
+
+    print("Feature Extraction Module Demo")
+    print("==============================")
+
+    # Load dataset
+    print("\nLoading Kimia dataset...")
+    data_dir = 'data/images_Kimia'
+    if not os.path.exists(data_dir):
+        print(f"Dataset directory {data_dir} not found. Using sample image instead.")
+        # Create a simple binary image for demonstration
+        sample_image = np.zeros((100, 100), dtype=np.uint8)
+        cv2.circle(sample_image, (50, 50), 30, 255, -1)
+        images = [sample_image]
+        labels = [0]
+        class_names = ['Circle']
+    else:
+        images, labels, class_names = load_kimia_dataset(data_dir, max_images_per_class=5)
+        print(f"Loaded {len(images)} images from {len(class_names)} classes")
+
+    # Display a sample image
+    if len(images) > 0:
+        plt.figure(figsize=(6, 6))
+        plt.imshow(images[0], cmap='gray')
+        plt.title(f"Sample Image: {class_names[labels[0]]}")
+        plt.axis('off')
+        plt.savefig('output/machine_learning/sample_image.png')
+        plt.close()
+        print(f"Sample image saved to output/machine_learning/sample_image.png")
+
+    # Extract features
+    print("\nExtracting features...")
+    feature_types = ['hu', 'zernike', 'geometric']
+
+    # Extract features for each type and display information
+    for feature_type in feature_types:
+        print(f"\nExtracting {feature_type} features:")
+        features = extract_dataset_features(images, feature_types=[feature_type], verbose=False)
+        print(f"- Shape: {features.shape}")
+        print(f"- Mean: {np.mean(features):.4f}")
+        print(f"- Std: {np.std(features):.4f}")
+        print(f"- Min: {np.min(features):.4f}")
+        print(f"- Max: {np.max(features):.4f}")
+
+    # Extract all features
+    print("\nExtracting all features:")
+    all_features = extract_dataset_features(images, feature_types=feature_types, verbose=False)
+    print(f"- Shape: {all_features.shape}")
+    print(f"- Total features per image: {all_features.shape[1]}")
+
+    print("\nFeature extraction completed successfully!")
+
+if __name__ == "__main__":
+    main()

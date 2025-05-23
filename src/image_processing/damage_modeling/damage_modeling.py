@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module for damage modeling and image restoration through deconvolution.
+Damage_modeling
 
-This module implements functions to:
-1. Generate a checkerboard image
-2. Generate a Point Spread Function (PSF)
-3. Apply damage to an image using convolution and noise
-4. Restore images using deconvolution algorithms
+Tools for modeling damage to images and restoring them using various techniques.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025

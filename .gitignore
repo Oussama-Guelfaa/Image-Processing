@@ -1,0 +1,90 @@
+# Python bytecode files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.env
+.venv
+env.bak/
+venv.bak/
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.project
+.pydevproject
+.settings/
+.DS_Store
+
+# Output files and directories
+output/
+*.png
+*.jpg
+*.jpeg
+*.tif
+*.tiff
+*.gif
+*.bmp
+*.pdf
+
+# Exceptions for data files that should be tracked
+!data/**/*.png
+!data/**/*.jpg
+!data/**/*.jpeg
+!data/**/*.tif
+!data/**/*.tiff
+!data/**/*.gif
+!data/**/*.bmp
+
+# Documentation build files
+docs/_build/
+docs/api/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Logs and temporary files
+*.log
+*.tmp
+tmp/
+temp/
+logs/
+
+# LaTeX build files
+*.aux
+*.bbl
+*.blg
+*.dvi
+*.fdb_latexmk
+*.fls
+*.lof
+*.lot
+*.out
+*.toc
+*.synctex.gz

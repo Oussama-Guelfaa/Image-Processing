@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module for image segmentation.
+Segmentation
 
-This module contains implementations of image segmentation techniques
-including K-means clustering and other segmentation algorithms.
+Image segmentation techniques including K-means clustering and other segmentation algorithms.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025

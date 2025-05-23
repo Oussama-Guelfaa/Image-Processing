@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module for Fourier transform operations.
+Fourier
 
-This module contains implementations of Fourier transform and inverse
-Fourier transform for image processing, as well as aliasing effects.
+Fourier transform and inverse Fourier transform operations for image processing.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025

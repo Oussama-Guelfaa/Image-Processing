@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Command-line interface for the image processing tools.
+Cli
+
+Module for image processing operations.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025
@@ -225,6 +227,21 @@ Examples:
                          help='Path to save the output (default: output/machine_learning)')
     ml_parser.add_argument('--cross_validate', action='store_true',
                          help='Perform cross-validation')
+
+    # Multiscale analysis parser
+    multiscale_parser = subparsers.add_parser('multiscale', help='Apply multiscale analysis techniques to images')
+    multiscale_parser.add_argument('--image', type=str, default=None,
+                                help='Path to the image file (default: cerveau.jpg)')
+    multiscale_parser.add_argument('--levels', type=int, default=4,
+                                help='Number of levels in the pyramid (default: 4)')
+    multiscale_parser.add_argument('--sigma', type=float, default=1.0,
+                                help='Sigma for Gaussian filter (default: 1.0)')
+    multiscale_parser.add_argument('--output', type=str, default=None,
+                                help='Path to save the output images')
+    multiscale_parser.add_argument('--compare', action='store_true',
+                                help='Compare reconstruction with and without details')
+    multiscale_parser.add_argument('image_path', type=str, nargs='?', default=None,
+                                help='Path to the input image (positional argument)')
 
     # Parse arguments
     args = parser.parse_args()

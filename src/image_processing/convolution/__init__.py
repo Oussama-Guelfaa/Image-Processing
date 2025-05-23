@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Convolution module for image processing.
+Convolution
 
-This module provides functions for applying convolution operations to images.
+Convolution operations for image processing, including various kernel types.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Exemple d'utilisation du filtre de Wiener avec calcul du ratio K.
+Filtering
+
+Image filtering operations including low-pass, high-pass, derivative, and Wiener filters.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025

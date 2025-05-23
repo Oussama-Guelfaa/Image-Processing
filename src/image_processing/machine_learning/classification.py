@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Classification module for image classification.
+Machine_learning
 
-This module provides functions for training and evaluating
-machine learning classifiers on image features.
+Machine learning techniques for image processing and analysis.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025
@@ -323,6 +322,7 @@ def classify_image(image, classifier, scaler=None, feature_types=None):
     probability : float
         Probability of the predicted class.
     """
+    # Import feature extraction function
     from .feature_extraction import extract_features
 
     # Extract features
@@ -344,3 +344,105 @@ def classify_image(image, classifier, scaler=None, feature_types=None):
         probability = None
 
     return label, probability
+
+def main():
+    """
+    Main function to demonstrate classification capabilities.
+    This function can be run directly to test the classification module.
+    """
+    import os
+    import pickle
+    import matplotlib.pyplot as plt
+
+    # Create output directory
+    os.makedirs('output/machine_learning', exist_ok=True)
+
+    print("Classification Module Demo")
+    print("=========================")
+
+    # Import feature extraction functions
+    from .feature_extraction import load_kimia_dataset, extract_dataset_features
+
+    # Load dataset
+    print("\nLoading dataset...")
+    data_dir = 'data/images_Kimia'
+    if not os.path.exists(data_dir):
+        print(f"Dataset directory {data_dir} not found. Using synthetic data instead.")
+        # Create synthetic data for demonstration
+        features = np.random.rand(100, 10)
+        labels = np.random.randint(0, 5, 100)
+        class_names = [f'Class_{i}' for i in range(5)]
+    else:
+        # Load real dataset
+        images, labels, class_names = load_kimia_dataset(data_dir, max_images_per_class=10)
+        print(f"Loaded {len(images)} images from {len(class_names)} classes")
+
+        # Extract features
+        print("Extracting features...")
+        features = extract_dataset_features(images, feature_types=['hu', 'zernike', 'geometric'], verbose=True)
+
+    # Split dataset
+    print("\nSplitting dataset into training and testing sets...")
+    X_train, X_test, y_train, y_test = train_test_split_dataset(features, labels, test_size=0.3)
+    print(f"Training set: {X_train.shape[0]} samples")
+    print(f"Testing set: {X_test.shape[0]} samples")
+
+    # Train classifiers
+    classifiers = ['mlp', 'svm', 'rf']
+    results = {}
+
+    for clf_type in classifiers:
+        print(f"\nTraining {clf_type.upper()} classifier...")
+        classifier, scaler = train_classifier(X_train, y_train, classifier_type=clf_type)
+
+        # Evaluate classifier
+        print(f"Evaluating {clf_type.upper()} classifier...")
+        accuracy, y_pred, report, conf_matrix = evaluate_classifier(classifier, X_test, y_test, scaler)
+
+        print(f"Accuracy: {accuracy:.4f}")
+        print("Classification Report:")
+        print(report)
+
+        results[clf_type] = {
+            'accuracy': accuracy,
+            'classifier': classifier,
+            'scaler': scaler,
+            'y_pred': y_pred
+        }
+
+    # Cross-validation
+    print("\nPerforming cross-validation...")
+    cv_scores, mean_score, std_score = cross_validate(features, labels, classifier_type='rf', n_splits=5)
+    print(f"Cross-validation scores: {cv_scores}")
+    print(f"Mean accuracy: {mean_score:.4f} ± {std_score:.4f}")
+
+    # Plot results
+    print("\nPlotting results...")
+    plt.figure(figsize=(10, 6))
+    accuracies = [results[clf]['accuracy'] for clf in classifiers]
+    plt.bar(classifiers, accuracies)
+    plt.ylim(0, 1.0)
+    plt.xlabel('Classifier')
+    plt.ylabel('Accuracy')
+    plt.title('Classifier Performance Comparison')
+    plt.savefig('output/machine_learning/classifier_comparison.png')
+    plt.close()
+
+    # Save best model
+    best_clf = max(results.items(), key=lambda x: x[1]['accuracy'])[0]
+    print(f"\nBest classifier: {best_clf.upper()} with accuracy {results[best_clf]['accuracy']:.4f}")
+
+    model_path = 'output/machine_learning/best_model.pkl'
+    with open(model_path, 'wb') as f:
+        pickle.dump({
+            'classifier': results[best_clf]['classifier'],
+            'scaler': results[best_clf]['scaler'],
+            'accuracy': results[best_clf]['accuracy'],
+            'class_names': class_names
+        }, f)
+
+    print(f"Best model saved to {model_path}")
+    print("\nClassification demo completed successfully!")
+
+if __name__ == "__main__":
+    main()

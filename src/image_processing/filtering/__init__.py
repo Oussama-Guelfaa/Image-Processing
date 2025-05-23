@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module for image filtering operations.
+Filtering
 
-This module contains implementations of various image filtering techniques
-including low-pass, high-pass, derivative, and Wiener filters.
+Image filtering operations including low-pass, high-pass, derivative, and Wiener filters.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025

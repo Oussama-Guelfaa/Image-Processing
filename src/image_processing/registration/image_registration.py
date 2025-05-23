@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module for image registration using Iterative Closest Point (ICP) method.
+Registration
 
-This module implements functions for rigid transformation estimation (rotation + translation)
-between two images based on corresponding control points.
+Image registration techniques including manual point selection and rigid transformation estimation.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025

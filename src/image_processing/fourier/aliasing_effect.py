@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Fourier
+
+Fourier transform and inverse Fourier transform operations for image processing.
+
+Author: Oussama GUELFAA
+Date: 01-04-2025
+"""
+
 """
 Démonstration de l'effet d'aliasing dans le traitement d'images
 

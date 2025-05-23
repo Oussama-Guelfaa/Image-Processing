@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module for image denoising techniques.
+Denoising
 
-This module implements various denoising methods:
-1. Mean filter
-2. Median filter
-3. Gaussian filter
-4. Bilateral filter
-5. Non-local means filter
+Techniques for removing noise from images, including various filtering methods.
 
 Author: Oussama GUELFAA
-Date: 01-05-2025
+Date: 01-04-2025
 """
 
 import numpy as np

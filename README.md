@@ -1,6 +1,6 @@
 # Image Processing Tools
 
-This project provides tools for image processing and analysis, including intensity transformations, histogram equalization, histogram matching, filtering, Fourier transforms, image registration, segmentation, and more. It is designed to be easy to use and educational.
+This project provides tools for image processing and analysis, including intensity transformations, histogram equalization, histogram matching, filtering, Fourier transforms, image registration, segmentation, multiscale analysis, and more. It is designed to be easy to use and educational.
 
 ## Project Structure
 
@@ -14,6 +14,8 @@ Image-Processing/
 │   ├── filtering/             # Documentation on filtering
 │   ├── fourier/               # Documentation on Fourier transforms
 │   ├── histogram/             # Documentation on histograms
+│   ├── machine_learning/      # Documentation on machine learning for image processing
+│   ├── multiscale/            # Documentation on multiscale analysis
 │   ├── registration/          # Documentation on image registration
 │   ├── segmentation/          # Documentation on segmentation
 │   └── transformations/       # Documentation on intensity transformations
@@ -21,7 +23,8 @@ Image-Processing/
 │   └── scripts/               # Example scripts
 ├── latex_documentation/       # LaTeX documentation
 ├── output/                    # Output directory for generated images
-│   └── images/                # Generated images
+│   ├── images/                # Generated images
+│   └── multiscale/            # Multiscale analysis results
 ├── src/                       # Main source code
 │   ├── image_processing/      # Image processing modules
 │   │   ├── convolution/       # Convolution operations
@@ -30,6 +33,8 @@ Image-Processing/
 │   │   ├── filtering/         # Filters (low-pass, high-pass, Wiener, etc.)
 │   │   ├── fourier/           # Fourier transforms
 │   │   ├── histogram/         # Histogram operations
+│   │   ├── machine_learning/  # Machine learning for image processing
+│   │   ├── multiscale/        # Multiscale analysis and scale-space decomposition
 │   │   ├── registration/      # Image registration
 │   │   ├── segmentation/      # Image segmentation
 │   │   └── transformations/   # Intensity transformations
@@ -112,6 +117,18 @@ Intensity transformation techniques including gamma correction, logarithmic tran
 
 ```python
 from src.image_processing.transformations import apply_gamma_correction
+```
+
+### Multiscale Analysis
+
+Multiscale analysis techniques including pyramidal decomposition, reconstruction, and scale-space decomposition.
+
+```python
+# Pyramidal decomposition
+from src.image_processing.multiscale import gaussian_pyramid, laplacian_pyramid, reconstruct_from_laplacian_pyramid
+
+# Scale-space decomposition
+from src.image_processing.multiscale import morphological_multiscale, kramer_bruckner_multiscale
 ```
 
 ## Installation
@@ -225,6 +242,12 @@ python main.py damage --psf gaussian --sigma 3.0 --noise 0.01 --image path/to/im
 
 # Restore an image
 python main.py restore --method wiener --k 0.01 --psf gaussian --sigma 3.0 --image damaged.png
+
+# Apply multiscale analysis
+python main.py multiscale --method pyramidal --levels 4 --image path/to/image.jpg
+
+# Apply scale-space decomposition
+python main.py multiscale --method scale_space --kb-iterations 3 --radius 5 --image path/to/image.jpg
 ```
 
 ## Examples

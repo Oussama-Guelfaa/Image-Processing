@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module for manual selection of control points using OpenCV.
+Registration
 
-This module provides functions for manually selecting corresponding points
-between two images for image registration.
+Image registration techniques including manual point selection and rigid transformation estimation.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025

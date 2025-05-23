@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module for estimating noise characteristics in images.
+Denoising
 
-This module implements functions to:
-1. Extract a Region of Interest (ROI) from an image
-2. Visualize the histogram of the ROI
-3. Estimate noise parameters from the ROI
+Techniques for removing noise from images, including various filtering methods.
 
 Author: Oussama GUELFAA
-Date: 01-05-2025
+Date: 01-04-2025
 """
 
 import numpy as np

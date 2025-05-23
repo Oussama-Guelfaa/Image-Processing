@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Adaptive Median Filter implementation.
+Denoising
 
-This module implements the adaptive median filter algorithm as described by
-Gonzalez and Woods. The algorithm is designed to handle salt-and-pepper noise
-while preserving image details.
+Techniques for removing noise from images, including various filtering methods.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025

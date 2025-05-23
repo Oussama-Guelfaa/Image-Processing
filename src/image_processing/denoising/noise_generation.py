@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module for generating different types of noise and adding them to images.
+Denoising
 
-This module implements functions to generate:
-1. Uniform noise
-2. Gaussian noise
-3. Salt and pepper noise
-4. Exponential noise
+Techniques for removing noise from images, including various filtering methods.
 
 Author: Oussama GUELFAA
-Date: 01-05-2025
+Date: 01-04-2025
 """
 
 import numpy as np

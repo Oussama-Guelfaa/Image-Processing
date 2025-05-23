@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Package for image processing functionality.
-This includes intensity transformations, histogram equalization, histogram matching,
-image registration, filtering, Fourier transforms, segmentation, damage modeling,
-convolution operations, and other image manipulation techniques.
+__init__.py
+
+Module for image processing operations.
 
 Author: Oussama GUELFAA
 Date: 01-04-2025

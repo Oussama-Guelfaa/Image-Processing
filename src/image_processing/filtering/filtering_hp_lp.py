@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Filtering
+
+Image filtering operations including low-pass, high-pass, derivative, and Wiener filters.
+
+Author: Oussama GUELFAA
+Date: 01-04-2025
+"""
+
 """
 Filtrage passe-haut et passe-bas dans le domaine fréquentiel
 
